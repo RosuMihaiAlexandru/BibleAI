@@ -2,6 +2,18 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Add .env file add the following
+KINDE_CLIENT_ID=8cb4cf1c2e184809842865a563501222
+KINDE_CLIENT_SECRET=z9eKIInw2j38B3J7eJ95e9qwub223pmulU1Z281r3OalpZLMeG
+KINDE_ISSUER_URL=https://genbibleaiapp.kinde.com
+KINDE_SITE_URL=http://localhost:3000
+KINDE_POST_LOGOUT_REDIRECT_URL=http://localhost:3000
+KINDE_POST_LOGIN_REDIRECT_URL=http://localhost:3000/api/auth/creation
+DATABASE_URL="postgresql://postgres.khnpedqeammyuawlujoh:Samasams16!@aws-0-eu-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1" # Set this to the Transaction connection pooler string you copied in Step 1
+DIRECT_URL="postgresql://postgres.khnpedqeammyuawlujoh:Samasams16!@aws-0-eu-west-2.pooler.supabase.com:5432/postgres"  # Set this to the Session connection pooler string you copied in Step 1
+UPLOADTHING_SECRET='sk_live_d6e2c67866c3ff5a49e738f4e31d9d70ae0ff288434038d8843d545b0bc06df1'
+UPLOADTHING_APP_ID='q3qrirkijv'
+
 First, run the development server:
 
 ```bash
