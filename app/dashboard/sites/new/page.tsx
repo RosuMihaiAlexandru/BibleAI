@@ -33,14 +33,13 @@ export default function NewSiteRoute() {
       });
     },
 
-    shouldValidate: "onBlur",
-    shouldRevalidate: "onInput",
   });
 
   // Example of how you might handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const result = await action(form);
+    const formData = new FormData(event.target);
+    const result = await action(formData);
     setLastResult(result); // Update the state with the result of the action
   };
 

@@ -7,7 +7,7 @@ import prisma from "./utils/db";
 import { requireUser } from "./utils/requireUser";
 import { stripe } from "./utils/stripe";
 
-export async function CreateSiteAction(prevState: any, formData: FormData) {
+export async function CreateSiteAction(formData: FormData) {
   const user = await requireUser();
 
   const [subStatus, sites] = await Promise.all([
@@ -32,12 +32,12 @@ export async function CreateSiteAction(prevState: any, formData: FormData) {
       const submission = await parseWithZod(formData, {
         schema: SiteCreationSchema({
           async isSubdirectoryUnique() {
-            const exisitngSubDirectory = await prisma.site.findUnique({
+            const existingSubDirectory = await prisma.site.findUnique({
               where: {
                 subdirectory: formData.get("subdirectory") as string,
               },
             });
-            return !exisitngSubDirectory;
+            return !existingSubDirectory;
           },
         }),
         async: true,
