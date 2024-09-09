@@ -72,8 +72,8 @@ export default async function DashboardIndexPage() {
         </div>
       ) : (
         <EmptyState
-          title="You don't have any journals created"
-          description="You currently don't have any journals. Please create some so that you can see them right here."
+          title="You don't have any journal entries created"
+          description="You currently don't have any journal entries. Please create some so that you can see them right here."
           href="/dashboard/journals/new"
           buttonText="Create Journal"
         />

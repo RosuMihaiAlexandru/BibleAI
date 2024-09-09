@@ -53,9 +53,9 @@ export default async function JournalRoute() {
             {journalEntries === undefined || journalEntries.length === 0 ? (
 
                 <EmptyState
-                    title="You don't have any journals created"
-                    description="You currently don't have any journals. Please create some so that you can see them here!"
-                    buttonText="Create Journal"
+                    title="You don't have any journal entries created"
+                    description="You currently don't have any journal entries. Please create some so that you can see them here!"
+                    buttonText="Create Journal Entry"
                     href="/dashboard/journals/new"
                 />
             ) : (
