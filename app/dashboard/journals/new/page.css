@@ -1,0 +1,65 @@
+.toolbar-icons{
+    flex-wrap: wrap;
+}
+
+.light-theme {
+    color:white
+}
+
+.editor-container {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.editor-toolbar button {
+    padding: 8px;
+    background-color: #f0f0f0;
+    border: none;
+    cursor: pointer;
+}
+
+.editor-toolbar .is-active {
+    background-color: #0070f3;
+    color: white;
+}
+
+.editor-content {
+    min-height: 300px;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.save-button {
+    padding: 10px 20px;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.tiptap.ProseMirror {
+min-height: 230px;
+    width: 100%;
+    /* Ensures it takes up the full width of the parent */
+    max-width: 100%;
+    /* Prevents it from exceeding the parent width */
+    overflow-wrap: break-word;
+    /* Ensures long words break and fit within the width */
+    box-sizing: border-box;
+    /* Includes padding and border in the element's width */
+    overflow-x: hidden;
+    /* Prevents horizontal scrolling */
+    word-break: break-word;
+    /* Forces word break if necessary */
+}

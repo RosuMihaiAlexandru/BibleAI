@@ -2,191 +2,76 @@
 
 import { redirect } from "next/navigation";
 import { parseWithZod } from "@conform-to/zod";
-import { PostSchema, SiteCreationSchema, siteSchema } from "./utils/zodSchemas";
+import { JournalSchema } from "./utils/zodSchemas";
 import prisma from "./utils/db";
 import { requireUser } from "./utils/requireUser";
 import { stripe } from "./utils/stripe";
 
-export async function CreateSiteAction(formData: FormData) {
-  const user = await requireUser();
-
-  const [subStatus, sites] = await Promise.all([
-    prisma.subscription.findUnique({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        status: true,
-      },
-    }),
-    prisma.site.findMany({
-      where: {
-        userId: user.id,
-      },
-    }),
-  ]);
-
-  if (!subStatus || subStatus.status !== "active") {
-    if (sites.length < 1) {
-      // Allow creating a site
-      const submission = await parseWithZod(formData, {
-        schema: SiteCreationSchema({
-          async isSubdirectoryUnique() {
-            const existingSubDirectory = await prisma.site.findUnique({
-              where: {
-                subdirectory: formData.get("subdirectory") as string,
-              },
-            });
-            return !existingSubDirectory;
-          },
-        }),
-        async: true,
-      });
-
-      if (submission.status !== "success") {
-        return submission.reply();
-      }
-
-      const response = await prisma.site.create({
-        data: {
-          description: submission.value.description,
-          name: submission.value.name,
-          subdirectory: submission.value.subdirectory,
-          userId: user.id,
-        },
-      });
-
-      return redirect("/dashboard/sites");
-    } else {
-      // user alredy has one site dont allow
-      return redirect("/dashboard/pricing");
-    }
-  } else if (subStatus.status === "active") {
-    // User has a active plan he can create sites...
-    const submission = await parseWithZod(formData, {
-      schema: SiteCreationSchema({
-        async isSubdirectoryUnique() {
-          const exisitngSubDirectory = await prisma.site.findUnique({
-            where: {
-              subdirectory: formData.get("subdirectory") as string,
-            },
-          });
-          return !exisitngSubDirectory;
-        },
-      }),
-      async: true,
-    });
-
-    if (submission.status !== "success") {
-      return submission.reply();
-    }
-
-    const response = await prisma.site.create({
-      data: {
-        description: submission.value.description,
-        name: submission.value.name,
-        subdirectory: submission.value.subdirectory,
-        userId: user.id,
-      },
-    });
-    return redirect("/dashboard/sites");
-  }
-}
-export async function CreatePostAction(prevState: any, formData: FormData) {
+export async function CreateJournalAction(formData: FormData) {
   const user = await requireUser();
 
   const submission = parseWithZod(formData, {
-    schema: PostSchema,
+    schema: JournalSchema,
   });
 
   if (submission.status !== "success") {
     return submission.reply();
   }
 
-  const data = await prisma.post.create({
+  const data = await prisma.journal.create({
     data: {
       title: submission.value.title,
-      smallDescription: submission.value.smallDescription,
-      slug: submission.value.slug,
-      articleContent: JSON.parse(submission.value.articleContent),
-      image: submission.value.coverImage,
+      body: submission.value.body,
+      // articleContent: JSON.parse(submission.value.articleContent),
+      // image: submission.value.coverImage,
       userId: user.id,
-      siteId: formData.get("siteId") as string,
     },
   });
 
-  return redirect(`/dashboard/sites/${formData.get("siteId")}`);
+  return redirect(`/dashboard/journals/${data.id}`);
 }
 
-export async function EditPostActions(prevState: any, formData: FormData) {
+export async function EditJournalActions(prevState: any, formData: FormData) {
   const user = await requireUser();
 
   const submission = parseWithZod(formData, {
-    schema: PostSchema,
+    schema: JournalSchema,
   });
 
   if (submission.status !== "success") {
     return submission.reply();
   }
 
-  const data = await prisma.post.update({
+  const data = await prisma.journal.update({
     where: {
       userId: user.id,
-      id: formData.get("articleId") as string,
+      id: formData.get("journalId") as string,
     },
     data: {
       title: submission.value.title,
-      smallDescription: submission.value.smallDescription,
-      slug: submission.value.slug,
-      articleContent: JSON.parse(submission.value.articleContent),
-      image: submission.value.coverImage,
+      body: submission.value.body,
+      // articleContent: JSON.parse(submission.value.articleContent),
+      // image: submission.value.coverImage,
     },
   });
 
-  return redirect(`/dashboard/sites/${formData.get("siteId")}`);
+  return redirect(`/dashboard/journals/${data.id}`);
 }
 
-export async function DeletePost(formData: FormData) {
+export async function DeleteJournal(formData: FormData) {
   const user = await requireUser();
 
-  const data = await prisma.post.delete({
+  const data = await prisma.journal.delete({
     where: {
       userId: user.id,
-      id: formData.get("articleId") as string,
+      id: formData.get("journalId") as string,
     },
   });
 
-  return redirect(`/dashboard/sites/${formData.get("siteId")}`);
+  return redirect(`/dashboard`);
 }
 
-export async function UpdateImage(formData: FormData) {
-  const user = await requireUser();
 
-  const data = await prisma.site.update({
-    where: {
-      userId: user.id,
-      id: formData.get("siteId") as string,
-    },
-    data: {
-      imageUrl: formData.get("imageUrl") as string,
-    },
-  });
-
-  return redirect(`/dashboard/sites/${formData.get("siteId")}`);
-}
-
-export async function DeleteSite(formData: FormData) {
-  const user = await requireUser();
-
-  const data = await prisma.site.delete({
-    where: {
-      userId: user.id,
-      id: formData.get("siteId") as string,
-    },
-  });
-
-  return redirect("/dashboard/sites");
-}
 
 export async function CreateSubscription() {
   const user = await requireUser();

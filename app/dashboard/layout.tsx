@@ -18,8 +18,8 @@ export const navLinks = [
     icon: LayoutDashboard,
   },
   {
-    name: "Sites",
-    href: "/dashboard/sites",
+    name: "Journal Entries",
+    href: "/dashboard/journals",
     icon: NotebookPen,
   },
   // {
@@ -77,57 +77,57 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Become Pro Access Section */}
         {isSidebarOpen && (
-  <div className="p-4">
-    <motion.div
-      className="bg-gradient-to-br  from-teal-800 to-teal-500 rounded-lg p-4 text-white relative overflow-hidden"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      <motion.div
-        className="absolute inset-0 bg-white opacity-10"
-        animate={{
-          scale: [1, 1.05, 1],
-          opacity: [0.1, 0.2, 0.1],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        animate={{
-          y: [0, -5, 0],
-        }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
-      >
-        <h3 className="font-semibold mb-1 relative z-10">Become Pro Access</h3>
-        <p className="text-sm mb-3 relative z-10">Enhance your experience with premium features</p>
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Link href="/dashboard/pricing" passHref>
-            <Button
-              variant="secondary"
-              className="w-full bg-white   hover:bg-blue-50 transition-colors duration-300"
+          <div className="p-4">
+            <motion.div
+              className="bg-gradient-to-br  from-teal-800 to-teal-500 rounded-lg p-4 text-white relative overflow-hidden"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              <Sparkles className="mr-2 h-4 w-4" />
-              Upgrade to Pro
-            </Button>
-          </Link>
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  </div>
-)}
+              <motion.div
+                className="absolute inset-0 bg-white opacity-10"
+                animate={{
+                  scale: [1, 1.05, 1],
+                  opacity: [0.1, 0.2, 0.1],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.div
+                animate={{
+                  y: [0, -5, 0],
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "easeInOut",
+                }}
+              >
+                <h3 className="font-semibold mb-1 relative z-10">Become Pro Access</h3>
+                <p className="text-sm mb-3 relative z-10">Enhance your experience with premium features</p>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Link href="/dashboard/pricing" passHref>
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-white   hover:bg-blue-50 transition-colors duration-300"
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </div>
+        )}
 
 
         <div className="p-4">
@@ -145,7 +145,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </DropdownMenuItem>
               <DropdownMenuItem className='cursor-pointer text-muted-foreground'>
                 <LifeBuoy className="text-muted-foreground h-4 mr-1" />
-                Support 
+                Support
               </DropdownMenuItem>
               <DropdownMenuItem className='cursor-pointer text-muted-foreground'>
                 <ThumbsUp className="text-muted-foreground h-4 mr-1" />
@@ -164,7 +164,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between p-4 bg-muted/40">
-          <h2 className="text-2xl font-bold">Your Sites</h2>
+          <h2 className="text-2xl font-bold">Your Journal Entries</h2>
           <div className="ml-auto flex items-center gap-x-5">
             {mounted && (
               <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
