@@ -34,7 +34,7 @@ export default async function DashboardIndexPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-5">Your Journals</h1>
+      <h1 className="text-2xl font-semibold mb-5">Your Journal Entries</h1>
       {journals.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
           {journals.map((item) => (
