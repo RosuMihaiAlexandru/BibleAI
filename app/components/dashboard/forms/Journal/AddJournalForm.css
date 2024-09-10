@@ -1,9 +1,12 @@
-.toolbar-icons{
+.toolbar-icons {
     flex-wrap: wrap;
 }
 
-.light-them, .light-theme h1, .light-theme h2, .light-theme p {
-    color:white
+.light-theme,
+.light-theme h1,
+.light-theme h2,
+.light-theme p {
+    color: white
 }
 
 .editor-container {
@@ -49,7 +52,7 @@
 }
 
 .tiptap.ProseMirror {
-min-height: 230px;
+    min-height: 230px;
     width: 100%;
     /* Ensures it takes up the full width of the parent */
     max-width: 100%;

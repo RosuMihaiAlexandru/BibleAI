@@ -17,5 +17,8 @@ const jsonStringValidator = z.string().refine((data) => {
 export const JournalSchema = z.object({
   title: z.string().min(1).max(100),
   body: z.string().min(1),
+  tagId: z.string().min(1),
+  userId: z.string().min(1),
+  entryType: z.string().min(1),
 });
 

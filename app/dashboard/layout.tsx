@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, ReactNode } from 'react'
+import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation'
 import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,30 @@ import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components"
 import { motion } from 'framer-motion'
+
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { useNavigate } from 'react-dom'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Edit3,
+  FileText,
+  Heart,
+  Star,
+  Bell,
+  Trash2,
+  MessageSquarePlus,
+  Edit,
+  ChevronDown,
+  Tag,
+  Calendar,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+} from "lucide-react"
+
+const MotionButton = motion(Button)
 
 export const navLinks = [
   {
@@ -33,7 +58,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const { setTheme, theme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [isNavExpanded, setIsNavExpanded] = useState(true)
   const pathname = usePathname()
+  const router = useRouter();
+
+  const handleClick = (path) => {
+    // Perform some logic
+    router.push(path);
+  };
 
   useEffect(() => {
     setMounted(true)
@@ -57,23 +89,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Input placeholder="Search..." className="pl-8" />
           </div>
         </div> */}
-        <nav className="flex-1 px-4">
-          <ul className="space-y-2">
-            {navLinks.map((item, index) => (
-              <li key={index}>
-                <Link href={item.href} passHref>
-                  <Button
-                    variant={pathname === item.href ? "secondary" : "ghost"}
-                    className="w-full justify-start"
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {isSidebarOpen && <span>{item.name}</span>}
-                  </Button>
-                </Link>
-              </li>
+        <ScrollArea className="flex-grow">
+          <div className="space-y-2">
+            {[
+              { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+              { icon: Edit3, label: "Journal Entries", path: "/dashboard/journals" },
+              // { icon: Edit3, label: "Journal Entries" },
+              // { icon: FileText, label: "Notes & Highlights" },
+              // { icon: Star, label: "Saved Insights" },
+              // { icon: Heart, label: "Favorite Verses" },
+              // { icon: LayoutDashboard, label: "Study Progress" },
+            ].map((item, index) => (
+              <MotionButton
+                onClick={() => handleClick(item.path)}
+                key={index}
+                variant="ghost"
+                className="w-full justify-start rounded-lg text-left"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {isSidebarOpen && <span>{item.label}</span>}
+              </MotionButton>
             ))}
-          </ul>
-        </nav>
+          </div>
+        </ScrollArea>
 
         {/* Become Pro Access Section */}
         {isSidebarOpen && (
@@ -192,7 +232,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4">
-          <div className="max-w-3xl mx-auto">
+          <div className="mx-auto">
             {children}
           </div>
         </main>

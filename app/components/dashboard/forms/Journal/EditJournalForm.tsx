@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SubmitButton } from "../SubmitButtons";
+import { SubmitButton } from "../../SubmitButtons";
 import { CreateJournalAction, EditJournalActions } from "@/app/actions";
 import { useForm } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod";
@@ -38,24 +38,44 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useFormState } from "react-dom";
-import '../../../dashboard/journals/new/page.css';
+import './AddJournalForm.css'
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 interface iAppProps {
     data: {
         title: string;
         body: string; // Journal content in HTML format
         id: string;
+        tagId: any;
+        entryType: string;
     };
 }
 
-export function EditJournalForm({ data }: iAppProps) {
-    const [lastResult, action] = useActionState(EditJournalActions, undefined);
+
+export function EditJournalForm({ data, tags, userId }) {
+    const [lastResult, action] = useFormState(EditJournalActions, undefined);
     const [bodyContent, setBodyContent] = useState<string>(data.body); // State for TipTap content
     const [title, setTitle] = useState<string>(data.title);
+    const [tagId, setTagId] = useState(data.tagId);
+    const [entryType, setEntryType] = useState(data.entryType);
     const { theme } = useTheme();
     const [isEditorReady, setIsEditorReady] = useState(false); // State to track editor readiness
+    const [errors, setErrors] = useState({} as any);
+
+    const entryTypes = [
+        { id: 'fasting-prayer', label: 'Fasting & Prayer' },
+        { id: 'gratitude', label: 'Gratitude' },
+        { id: 'growth', label: 'Growth' },
+        { id: 'faith-journey', label: 'Faith Journey' },
+    ]
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -136,12 +156,30 @@ export function EditJournalForm({ data }: iAppProps) {
         }
     };
 
+    const tagChanged = (value) => {
+        setTagId(value);
+    }
+
+    const entryTypeChanged = (value) => {
+        setEntryType(value);
+    }
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
-        formData.append("body", bodyContent); // Append updated body content
+        formData.append("body", bodyContent);
+        formData.append("entryType", entryType); // Append TipTap content
+        formData.append("tagId", tagId);
+        formData.append("userId", userId);
+        const result = parseWithZod(formData, {
+            schema: JournalSchema,
+        }) as any;
+        setErrors(result.error ? result.error : {});
+        if (result.status === "success") {
+            await EditJournalActions(null, formData);  // Replace with actual action
+        }// Append updated body content
 
-        const result = await EditJournalActions(null, formData); // Replace with actual action
+        // Replace with actual action
 
     };
 
@@ -168,7 +206,56 @@ export function EditJournalForm({ data }: iAppProps) {
                             placeholder="Enter journal title"
                             onChange={(e) => setTitle(e.target.value)}
                         />
-                        <p className="text-red-500 text-sm">{fields.title.errors}</p>
+                        {errors.title && errors.title.length > 0 &&
+                            errors.title.map((error, index) => {
+                                return (<p key={index} className="text-red-500 text-sm">
+                                    {error}
+                                </p>)
+                            })}
+                    </div>
+
+                    <div>
+                        <Select defaultValue={tagId} onValueChange={tagChanged}>
+                            <SelectTrigger className="w-[240px]">
+                                <SelectValue placeholder="Select Tag" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {tags.map((tag, index) => {
+                                    return (
+                                        <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
+                                    )
+                                })
+                                }
+                            </SelectContent>
+                        </Select>
+                        {errors.tagId && errors.tagId.length > 0 &&
+                            errors.tagId.map((error, index) => {
+                                return (<p key={index} className="text-red-500 text-sm">
+                                    {error}
+                                </p>)
+                            })}
+                    </div>
+
+                    <div>
+                        <Select defaultValue={entryType} onValueChange={entryTypeChanged}>
+                            <SelectTrigger className="w-[240px]">
+                                <SelectValue placeholder="Select Entry Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {entryTypes.map((entryType, index) => {
+                                    return (
+                                        <SelectItem key={entryType.id} value={entryType.id}>{entryType.label}</SelectItem>
+                                    )
+                                })
+                                }
+                            </SelectContent>
+                        </Select>
+                        {errors.entryType && errors.entryType.length > 0 &&
+                            errors.entryType.map((error, index) => {
+                                return (<p key={index} className="text-red-500 text-sm">
+                                    {error}
+                                </p>)
+                            })}
                     </div>
 
                     <div className="grid gap-2">
@@ -320,7 +407,12 @@ export function EditJournalForm({ data }: iAppProps) {
                             </Button>
                         </div>
                         <EditorContent editor={editor} className="border p-2 rounded" />
-                        <p className="text-red-500 text-sm">{fields.body.errors}</p>
+                        {errors.body && errors.body.length > 0 &&
+                            errors.body.map((error, index) => {
+                                return (<p key={index} className="text-red-500 text-sm">
+                                    {error}
+                                </p>)
+                            })}
                     </div>
 
                     <SubmitButton text="Update Journal Entry" />

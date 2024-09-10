@@ -7,7 +7,7 @@ import prisma from "./utils/db";
 import { requireUser } from "./utils/requireUser";
 import { stripe } from "./utils/stripe";
 
-export async function CreateJournalAction(formData: FormData) {
+export async function CreateJournalAction(prevState: any, formData: FormData) {
   const user = await requireUser();
 
   const submission = parseWithZod(formData, {
@@ -25,10 +25,12 @@ export async function CreateJournalAction(formData: FormData) {
       // articleContent: JSON.parse(submission.value.articleContent),
       // image: submission.value.coverImage,
       userId: user.id,
+      tagId: submission.value.tagId,
+      entryType: submission.value.entryType
     },
   });
 
-  return redirect(`/dashboard/journals/${data.id}`);
+  return redirect(`/dashboard`);
 }
 
 export async function EditJournalActions(prevState: any, formData: FormData) {
@@ -52,10 +54,13 @@ export async function EditJournalActions(prevState: any, formData: FormData) {
       body: submission.value.body,
       // articleContent: JSON.parse(submission.value.articleContent),
       // image: submission.value.coverImage,
+      userId: user.id,
+      tagId: submission.value.tagId,
+      entryType: submission.value.entryType
     },
   });
 
-  return redirect(`/dashboard/journals/${data.id}`);
+  return redirect(`/dashboard`);
 }
 
 export async function DeleteJournal(formData: FormData) {

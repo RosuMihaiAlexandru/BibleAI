@@ -27,7 +27,7 @@ export default function DeleteForm({
                 </CardHeader>
                 <CardFooter className="w-full flex justify-between">
                     <Button variant="secondary" asChild>
-                        <Link href={`/dashboard/journals/${params.journalId}`}>Cancel</Link>
+                        <Link href={`/dashboard`}>Cancel</Link>
                     </Button>
                     <form action={DeleteJournal}>
                         <input type="hidden" name="journalId" value={params.journalId} />

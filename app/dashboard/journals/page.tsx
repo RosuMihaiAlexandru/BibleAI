@@ -1,25 +1,27 @@
+
 import prisma from "@/app/utils/db";
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { redirect } from "next/navigation";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { FileIcon, PlusCircle } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import Defaultimage from "@/public/default.png";
-import { EmptyState } from "@/app/components/dashboard/EmptyState";
+import JournalEntries from "../../components/dashboard/JournalEntries";
+
+
+const entryTypes = [
+    { id: 'fasting-prayer', label: 'Fasting & Prayer' },
+    { id: 'gratitude', label: 'Gratitude' },
+    { id: 'growth', label: 'Growth' },
+    { id: 'faith-journey', label: 'Faith Journey' },
+]
+
 
 // Fetch journal entries for the logged-in user
 async function getJournalEntries(userId: string) {
     const journals = await prisma.journal.findMany({
         where: {
             userId: userId,
+        },
+        include: {
+            user: true,
+            tag: true
         },
         orderBy: {
             createdAt: "desc",
@@ -29,7 +31,21 @@ async function getJournalEntries(userId: string) {
     return journals;
 }
 
-export default async function JournalRoute() {
+async function getTags() {
+    const tags = await prisma.tag.findMany({
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    return tags;
+}
+
+
+
+export default async function Component() {
+
+
     const { getUser } = getKindeServerSession();
     const user = await getUser();
 
@@ -37,62 +53,15 @@ export default async function JournalRoute() {
         return redirect("/api/auth/login");
     }
 
+    const data = await getJournalEntries(user.id)
+    console.log(data);
     // Get journal entries for the logged-in user
-    const journalEntries = await getJournalEntries(user.id);
+    const tags = await getTags();
+    console.log(tags);
+    // console.log(getDeepestText(data[0].body));
+
 
     return (
-        <>
-            <div className="flex w-full justify-end">
-                <Button asChild>
-                    <Link href={"/dashboard/journals/new"}>
-                        <PlusCircle className="mr-2 size-4" /> Create Journal
-                    </Link>
-                </Button>
-            </div>
-
-            {journalEntries === undefined || journalEntries.length === 0 ? (
-
-                <EmptyState
-                    title="You don't have any journal entries created"
-                    description="You currently don't have any journal entries. Please create some so that you can see them here!"
-                    buttonText="Create Journal Entry"
-                    href="/dashboard/journals/new"
-                />
-            ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
-
-                    {journalEntries.map((entry) => (
-                        <Card key={entry.id}>
-                            {/* <Image
-                                src={entry.imageUrl ?? Defaultimage}
-                                alt={entry.title}
-                                className="rounded-t-lg object-cover w-full h-[200px]"
-                                width={400}
-                                height={200}
-                            /> */}
-                            <CardHeader>
-                                <CardTitle className="truncate">{entry.title}</CardTitle>
-                                <CardDescription className="line-clamp-3">
-                                    {entry.content?.slice(0, 100) ?? "No content available..."}
-                                </CardDescription>
-                            </CardHeader>
-
-                            <CardFooter>
-                                <Button asChild className="w-full">
-                                    <Link href={`/dashboard/journals/${entry.id}`}>
-                                        View Journal
-                                    </Link>
-                                </Button>
-                                <Button asChild className="w-full">
-                                    <Link href={`/dashboard/journals/${entry.id}/delete`}>
-                                        Delete Journal
-                                    </Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
-            )}
-        </>
-    );
+        <JournalEntries userId={user.id} data={data} tags={tags}></JournalEntries>
+    )
 }
