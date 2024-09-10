@@ -9,7 +9,7 @@ import { notFound, redirect } from "next/navigation";
 
 async function getData(journalId: string) {
     // Fetch journal entries for the logged-in user
-    const journals = await prisma.journal.findUnique({
+    const journal = await prisma.journal.findUnique({
         where: {
             id: journalId,
         },
@@ -19,7 +19,7 @@ async function getData(journalId: string) {
         },
     });
 
-    return journals;
+    return journal;
 }
 
 async function getTags() {
@@ -49,9 +49,9 @@ export default async function EditRoute({
     const tags = await getTags();
     return (
         <div>
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
                 <h1 className="text-2xl font-semibold">Edit Journal Entry</h1>
-            </div>
+            </div> */}
 
             <EditJournalForm tags={tags} data={data} userId={user.id} />
         </div>

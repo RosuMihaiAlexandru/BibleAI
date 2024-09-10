@@ -150,6 +150,11 @@ export default function JournalEntries({ data, tags, userId }) {
         setIsEditorOpen(true)
     }
 
+    const addNewToJournalEntries = (item) => {
+        data.push(item);
+        setJournalEntries([...journalEntries]);
+    }
+
     return (
         <div className={`flex h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-white"}`}>
             {/* Left-side vertical navigation bar */}
@@ -261,7 +266,7 @@ export default function JournalEntries({ data, tags, userId }) {
                                 >
                                     <div className="mb-4 flex justify-between  flex-col">
                                         <h3 className="text-lg font-semibold">New {selectedEntryType} Entry</h3>
-                                        <AddJournalForm userId={userId} data={tags} selectedEntryType={selectedEntryType} setIsEditorOpen={setIsEditorOpen}></AddJournalForm>
+                                        <AddJournalForm addNewToJournalEntries={addNewToJournalEntries} userId={userId} data={tags} selectedEntryType={selectedEntryType} setIsEditorOpen={setIsEditorOpen}></AddJournalForm>
                                     </div>
                                     {/* <EditorContent editor={editor} />
                                     <div className="mt-4 flex justify-end space-x-2">

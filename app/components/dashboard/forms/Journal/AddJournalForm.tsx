@@ -52,7 +52,7 @@ import { useFormState } from "react-dom";
 // Importing useTheme
 
 
-export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId }) {
+export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId, addNewToJournalEntries }) {
     const [lastResult, action] = useFormState(CreateJournalAction, undefined);
     const [bodyContent, setBodyContent] = useState(""); // State for TipTap content
     // const action = CreateJournalAction;
@@ -149,8 +149,9 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         }) as any;
         setErrors(result.error ? result.error : {});
         if (result.status === "success") {
-            const result = await CreateJournalAction(null, formData); // Replace with actual action
-            window.location.reload();
+            const newItem = await CreateJournalAction(null, formData); // Replace with actual action
+            addNewToJournalEntries(newItem);
+            // window.location.reload();
             setIsEditorOpen(false);
         }
         // action(result);
