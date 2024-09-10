@@ -150,6 +150,8 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         setErrors(result.error ? result.error : {});
         if (result.status === "success") {
             const result = await CreateJournalAction(null, formData); // Replace with actual action
+            window.location.reload();
+            setIsEditorOpen(false);
         }
         // action(result);
     };
