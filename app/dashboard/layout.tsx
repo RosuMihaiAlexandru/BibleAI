@@ -3,7 +3,7 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation'
-import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search, Sparkle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
@@ -46,6 +46,11 @@ export const navLinks = [
     name: "Journal Entries",
     href: "/dashboard/journals",
     icon: NotebookPen,
+  },
+  {
+    name: "Bible Ai Chat",
+    href: "/dashboard/chat-assistant",
+    icon: Sparkles,
   },
   // {
   //   name: "Pricing",
@@ -94,6 +99,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {[
               { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
               { icon: Edit3, label: "Journal Entries", path: "/dashboard/journals" },
+              { icon: Sparkles, label: "Bible Ai Chat", path: "/dashboard/chat-assistant" },
               // { icon: Edit3, label: "Journal Entries" },
               // { icon: FileText, label: "Notes & Highlights" },
               // { icon: Star, label: "Saved Insights" },
@@ -204,7 +210,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between p-4 bg-muted/40">
-          <h2 className="text-2xl font-bold">Your Journal Entries</h2>
+          <h2 className="text-2xl font-bold">Bible Ai Chat</h2>
           <div className="ml-auto flex items-center gap-x-5">
             {mounted && (
               <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
@@ -232,7 +238,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4">
-          <div className="mx-auto">
+          <div className="mx-auto h-full">
             {children}
           </div>
         </main>
