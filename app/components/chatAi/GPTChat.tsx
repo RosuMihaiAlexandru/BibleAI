@@ -138,7 +138,8 @@ export default function ChatGPTChat() {
                                 )}
                             </div>
                             <div className={`flex flex-col ${conv.type === 'user' ? 'items-end' : 'items-start'}`}>
-                                <Card className={`p-4 ${conv.type === 'user' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                                <Card className={`p-4 ${conv.type === 'user' ? 'bg-blue-100' : 'bg-gray-100'} 
+                                ${theme === 'dark' ? 'darkgradient' : ''}`}>
                                     {conv.type === 'ai' && index === conversations.length - 1 ? (
                                         <ReactTyped
                                             strings={[conv.text]}
