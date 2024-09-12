@@ -201,7 +201,7 @@ export default function JournalEntries({ data, tags, userId }) {
                                 transition={{ duration: 0.5, delay: 0.2 }}
                                 className="mb-6 flex justify-between items-center"
                             >
-                                <Dialog open={isNewEntryModalOpen} onOpenChange={setIsNewEntryModalOpen}>
+                                <Dialog open={isNewEntryModalOpen} setIsNewEntryModalOpen={setIsNewEntryModalOpen}>
                                     <DialogTrigger asChild>
                                         <MotionButton
                                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6"

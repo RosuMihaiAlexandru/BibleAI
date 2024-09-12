@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { userPrompt } = reqBody;
 
   // Enhance the prompt with contextual clues and constraints
-  const enhancedPrompt = `Provide a Bible-based response to the following: ${userPrompt}`;
+  const enhancedPrompt = `Provide a Bible-based response to the following: ${userPrompt}. If the user asks you to explain a verse please explain that verse that it is provided to you in more detail.`;
 
   try {
     // Make a call to OpenAI's ChatGPT model (GPT-4 or GPT-3.5)

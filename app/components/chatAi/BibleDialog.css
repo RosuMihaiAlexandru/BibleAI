@@ -1,0 +1,8 @@
+.bible-content {
+    gap: 10px;
+    flex-wrap: wrap!important
+}
+
+.dialog-header {
+    height:100px ;
+}

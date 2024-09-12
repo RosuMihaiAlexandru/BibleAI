@@ -2,14 +2,19 @@
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import { Input } from "@/components/ui/input";
-import { Send, UserCircleIcon, CloudLightningIcon } from "lucide-react";
+import { Send, UserCircleIcon, CloudLightningIcon, CrossIcon, InfoIcon, FileSpreadsheetIcon, BookAIcon, BookOpenIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import "./GPTChat.css";
 import { ReactTyped } from "react-typed";
 import { Audio } from "react-loader-spinner";
 import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { BibleDialog } from './BibleDialog'
 
+// Replace with your actual components
+const MotionButton = motion(Button);
 export default function ChatGPTChat() {
     const [prompt, setPrompt] = useState("");
     const [response, setResponse] = useState("");
@@ -18,9 +23,36 @@ export default function ChatGPTChat() {
     const [loading, setLoading] = useState(false);
     const { theme } = useTheme();
 
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedVerse, setSelectedVerse] = useState(null);
+
+    const setVerse = (verse) => {
+        setSelectedVerse(verse);
+
+        // Use DOMParser to parse the HTML string
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(verse.content, 'text/html');
+
+        // Get the text content inside the <p> tag
+        const textContent = doc.querySelector('p').textContent;
+
+        console.log(textContent);
+
+        onSubmit(`Please explain the meaning of this Bible verse: '${textContent}'`)
+        // console.log("Received value from child:", value);
+    };
+
     // Ref for conversation container
     const conversationEndRef = useRef<HTMLDivElement>(null);
     let scrollTimeout: NodeJS.Timeout | null = null;
+
+    const handleOpenDialog = () => {
+        setIsDialogOpen(true);
+    };
+
+    const handleCloseDialog = () => {
+        setIsDialogOpen(false);
+    };
 
     const scrollToBottom = () => {
         if (conversationEndRef.current) {
@@ -50,8 +82,8 @@ export default function ChatGPTChat() {
         }
     };
 
-    const onSubmit = async () => {
-        if (prompt === "") {
+    const onSubmit = async (text) => {
+        if (text === "") {
             toast.error("Prompt cannot be empty!");
             return;
         }
@@ -59,7 +91,7 @@ export default function ChatGPTChat() {
         // Add the user's message instantly
         setConversations((prev) => [
             ...prev,
-            { text: prompt, type: 'user', timestamp: new Date().toLocaleString() }
+            { text: text, type: 'user', timestamp: new Date().toLocaleString() }
         ]);
 
         setPrompt(""); // Clear prompt after submission
@@ -77,10 +109,10 @@ export default function ChatGPTChat() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/chat`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                userPrompt: prompt,
+                userPrompt: text,
             }),
         });
 
@@ -112,7 +144,7 @@ export default function ChatGPTChat() {
         // Stop auto-scrolling after 3 seconds (or adjust to your needs)
         setTimeout(() => {
             stopAutoScroll();
-        }, 6000);
+        }, 13000);
 
     }, [response]);
 
@@ -127,6 +159,18 @@ export default function ChatGPTChat() {
         <main className="flex flex-col h-full">
             {/* Conversations container */}
             <div className="flex-1 w-full overflow-y-auto p-4">
+                <MotionButton
+                    variant="secondary"
+
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleOpenDialog}
+                >
+                    <CrossIcon width={'40px'} />
+                    Get Verses AI Insight
+                    <BookOpenIcon width={'40px'} />
+                </MotionButton>
+                <BibleDialog setVerse={setVerse} isOpen={isDialogOpen} onClose={setIsDialogOpen} ></BibleDialog>
                 {conversations.map((conv, index) => (
                     <div key={index} className={`flex ${conv.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
                         <div className={`flex ${conv.type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-center`}>
@@ -183,7 +227,7 @@ export default function ChatGPTChat() {
                         onKeyDown={onKeyDown}
                     />
                     <button
-                        onClick={onSubmit}
+                        onClick={() => onSubmit(prompt)}
                         className="absolute top-3 right-3 hover:scale-110 transition ease-in-out"
                     >
                         <Send size="25" />
