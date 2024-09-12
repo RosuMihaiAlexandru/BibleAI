@@ -1,5 +1,4 @@
-"use client"
-
+'use client'
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import { Input } from "@/components/ui/input";
@@ -21,10 +20,26 @@ export default function ChatGPTChat() {
 
     // Ref for conversation container
     const conversationEndRef = useRef<HTMLDivElement>(null);
+    let scrollTimeout: NodeJS.Timeout | null = null;
 
     const scrollToBottom = () => {
         if (conversationEndRef.current) {
-            conversationEndRef.current.scrollIntoView({ behavior: "smooth" });
+            conversationEndRef.current.scrollIntoView({ behavior: "instant" });
+        }
+    };
+
+    const startAutoScroll = () => {
+        // Clear previous timeout if any
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+        // Set an interval to scroll to bottom every 100ms
+        scrollTimeout = setInterval(scrollToBottom, 50);
+    };
+
+    const stopAutoScroll = () => {
+        if (scrollTimeout) {
+            clearInterval(scrollTimeout);
         }
     };
 
@@ -50,6 +65,14 @@ export default function ChatGPTChat() {
         setPrompt(""); // Clear prompt after submission
         setOutput("The response will appear here...");
         setLoading(true);
+
+        // Start auto-scrolling when AI is typing
+        startAutoScroll();
+
+        // Stop auto-scrolling after 3 seconds (or adjust to your needs)
+        setTimeout(() => {
+            stopAutoScroll();
+        }, 1000);
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/chat`, {
             method: "POST",
@@ -83,9 +106,22 @@ export default function ChatGPTChat() {
             { text: response, type: 'ai', timestamp: new Date().toLocaleString() }
         ]);
 
-        // Scroll to bottom whenever a new message is added
-        scrollToBottom();
+        // Start auto-scrolling when AI is typing
+        startAutoScroll();
+
+        // Stop auto-scrolling after 3 seconds (or adjust to your needs)
+        setTimeout(() => {
+            stopAutoScroll();
+        }, 6000);
+
     }, [response]);
+
+    // Cleanup timeout when component unmounts or no longer needed
+    useEffect(() => {
+        return () => {
+            stopAutoScroll();
+        };
+    }, []);
 
     return (
         <main className="flex flex-col h-full">
