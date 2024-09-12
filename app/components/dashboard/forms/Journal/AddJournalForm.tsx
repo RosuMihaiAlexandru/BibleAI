@@ -49,6 +49,7 @@ import { useTheme } from "next-themes";
 import prisma from "@/app/utils/db";
 import { redirect } from "next/navigation";
 import { useFormState } from "react-dom";
+import { toast } from "sonner";
 // Importing useTheme
 
 
@@ -153,6 +154,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
             addNewToJournalEntries(newItem);
             // window.location.reload();
             setIsEditorOpen(false);
+            toast.success("Journal has been created");
         }
         // action(result);
     };

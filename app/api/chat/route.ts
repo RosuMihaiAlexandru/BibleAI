@@ -1,21 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Import OpenAI client
+const OpenAI = require("openai");
+
+
 
 export async function POST(req: NextRequest) {
-  // get prompt field from the request body
+  const openai = new OpenAI();
+  // Get the prompt field from the request body
   const reqBody = await req.json();
   const { userPrompt } = reqBody;
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY as string);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-pro",
-    generationConfig: { maxOutputTokens: 200 },
-  });
+
+  // Enhance the prompt with contextual clues and constraints
+  const enhancedPrompt = `Provide a Bible-based response to the following: ${userPrompt}`;
 
   try {
-    const result = await model.generateContent(userPrompt);
-    const response = await result.response;
-    const text = response.text();
+    // Make a call to OpenAI's ChatGPT model (GPT-4 or GPT-3.5)
+    const response = await openai?.chat?.completions?.create({
+      model: "gpt-3.5-turbo", // You can use "gpt-4" or "gpt-3.5-turbo" based on your needs
+      messages: [
+        { role: "system", content: "You are an AI that provides responses based on biblical texts." },
+        { role: "user", content: enhancedPrompt },
+      ],
+      max_tokens: 200, // Limit the number of tokens for the response
+    });
+
+    // Extract the content from the API response
+    const text = response.choices[0].message.content || "No response";
+
+    // Return the response as JSON
     return NextResponse.json({
       text,
     });

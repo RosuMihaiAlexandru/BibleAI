@@ -177,6 +177,7 @@ export function EditJournalForm({ data, tags, userId }) {
         setErrors(result.error ? result.error : {});
         if (result.status === "success") {
             await EditJournalActions(null, formData);  // Replace with actual action
+            toast.success("Journal has been updated");
         }// Append updated body content
 
         // Replace with actual action

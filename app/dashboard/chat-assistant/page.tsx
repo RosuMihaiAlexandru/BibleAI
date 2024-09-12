@@ -3,12 +3,11 @@ import prisma from "@/app/utils/db";
 import { redirect } from "next/navigation";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import JournalEntries from "../../components/dashboard/JournalEntries";
-import GeminiChat from "@/app/components/chatAi/GeminiChat";
+import GPTChat from "@/app/components/chatAi/GPTChat";
 
 
 
 export default async function Component() {
-
 
     const { getUser } = getKindeServerSession();
     const user = await getUser();
@@ -19,6 +18,6 @@ export default async function Component() {
 
 
     return (
-        <GeminiChat></GeminiChat>
+        <GPTChat></GPTChat>
     )
 }

@@ -1,23 +1,32 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import { Input } from "@/components/ui/input";
-import { Send, Loader, UserCircle2Icon, ZapIcon, UserCircleIcon, CloudLightningIcon } from "lucide-react";
+import { Send, UserCircleIcon, CloudLightningIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import "./GeminiChat.css";
+import "./GPTChat.css";
 import { ReactTyped } from "react-typed";
 import { Audio } from "react-loader-spinner";
 import { useTheme } from "next-themes";
 
-export default function GeminiChat() {
+export default function ChatGPTChat() {
     const [prompt, setPrompt] = useState("");
     const [response, setResponse] = useState("");
     const [output, setOutput] = useState("The response will appear here...");
     const [conversations, setConversations] = useState<{ text: string; type: 'user' | 'ai'; timestamp: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const { theme } = useTheme();
+
+    // Ref for conversation container
+    const conversationEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        if (conversationEndRef.current) {
+            conversationEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    };
 
     const onKeyDown = (e: any) => {
         if (e.key === "Enter") {
@@ -41,9 +50,8 @@ export default function GeminiChat() {
         setPrompt(""); // Clear prompt after submission
         setOutput("The response will appear here...");
         setLoading(true);
-        // toast.loading("Chatting with the AI...");
 
-        const response = await fetch("http://localhost:3000/api/chat", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/chat`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -62,26 +70,21 @@ export default function GeminiChat() {
             return;
         }
 
-        // Simulate typing effect for the AI's response
         setResponse(data.text);
-        window.scrollTo(1, 1)
     };
 
     useEffect(() => {
         if (response.length === 0) return;
 
         setOutput("");
-        // for (let i = 0; i < response.length; i++) {
-        //     setTimeout(() => {
-        //         setOutput((prev) => prev + response[i]);
-        //     }, i * 10);
-        // }
-
         // Add the AI's message after typing effect
         setConversations((prev) => [
             ...prev,
             { text: response, type: 'ai', timestamp: new Date().toLocaleString() }
         ]);
+
+        // Scroll to bottom whenever a new message is added
+        scrollToBottom();
     }, [response]);
 
     return (
@@ -100,26 +103,25 @@ export default function GeminiChat() {
                             </div>
                             <div className={`flex flex-col ${conv.type === 'user' ? 'items-end' : 'items-start'}`}>
                                 <Card className={`p-4 ${conv.type === 'user' ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                                    {conv.type === 'ai' && index === conversations.length - 1 ?
+                                    {conv.type === 'ai' && index === conversations.length - 1 ? (
                                         <ReactTyped
                                             strings={[conv.text]}
                                             typeSpeed={10}
-
                                             backSpeed={20}
                                             cursorChar=">"
                                             showCursor={true}
-                                        /> :
-                                        <Markdown>{conv.text}</Markdown>}
+                                        />
+                                    ) : (
+                                        <Markdown>{conv.text}</Markdown>
+                                    )}
                                 </Card>
                             </div>
                         </div>
-
                     </div>
                 ))}
                 {loading && (
                     <div className="flex justify-start mb-4">
                         <div className="flex items-center">
-                            {/* <CloudLightningIcon /> */}
                             <Audio
                                 color={theme === "light" ? "black" : "white"}
                                 height={25}
@@ -128,6 +130,8 @@ export default function GeminiChat() {
                         </div>
                     </div>
                 )}
+                {/* Invisible div to ensure we scroll to the bottom */}
+                <div ref={conversationEndRef} />
             </div>
 
             {/* Prompt container */}
@@ -152,4 +156,3 @@ export default function GeminiChat() {
         </main>
     );
 }
-
