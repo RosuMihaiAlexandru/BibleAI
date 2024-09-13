@@ -48,6 +48,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+
+import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
+
 interface iAppProps {
     data: {
         title: string;
@@ -58,7 +61,6 @@ interface iAppProps {
     };
 }
 
-
 export function EditJournalForm({ data, tags, userId }) {
     const [lastResult, action] = useFormState(EditJournalActions, undefined);
     const [bodyContent, setBodyContent] = useState<string>(data.body); // State for TipTap content
@@ -68,13 +70,16 @@ export function EditJournalForm({ data, tags, userId }) {
     const { theme } = useTheme();
     const [isEditorReady, setIsEditorReady] = useState(false); // State to track editor readiness
     const [errors, setErrors] = useState({} as any);
+    const [searchQuery, setSearchQuery] = useState(""); // State for handling /query
+    const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
+    const [searchResults, setSearchResults] = useState([]); // State to store Bible search
 
     const entryTypes = [
         { id: 'fasting-prayer', label: 'Fasting & Prayer' },
         { id: 'gratitude', label: 'Gratitude' },
         { id: 'growth', label: 'Growth' },
         { id: 'faith-journey', label: 'Faith Journey' },
-    ]
+    ];
 
     const editor = useEditor({
         extensions: [
@@ -99,12 +104,61 @@ export function EditJournalForm({ data, tags, userId }) {
         content: bodyContent, // Load existing content
         onUpdate({ editor }) {
             setBodyContent(editor.getHTML()); // Update state on every change
+            setSearchQuery("");
+            const lastText = editor.getText();
+            const match = lastText.match(/\/([^\/]+)\/(?!\/)/);
+            if (match) {
+                const query = match[1];
+                setSearchQuery(query);
+            }
+
         },
         onCreate() {
             // Editor is now ready
             setIsEditorReady(true);
         },
     });
+
+    useEffect(() => {
+        if (searchQuery && searchQuery !== "") {
+            fetch(`https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/search?query=${searchQuery}&sort=relevance`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-key": process.env.NEXT_PUBLIC_BIBLE_API_KEY
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setSearchResults(data.data); setIsModalOpen(true);
+                }
+                ); // Update the search results in state
+        }
+    }, [searchQuery]);
+
+    const handleInsertBibleVerse = (verse) => {
+        const textToInsert = `${verse.reference}: "${verse.text}"`; // Format the reference and text
+
+        // Assuming the query starts with "/" and ends with the query term (e.g., /sin)
+        const queryRegex = /\/([^\/]+)\/(?!\/)/;
+
+        // Get the current content of the editor
+        const currentContent = editor.getText();
+
+        // Find and remove only the query from the current content (e.g., /sin)
+        const updatedContent = currentContent.replace(queryRegex, "");
+
+        // Ensure new content starts on a new line with HTML line breaks
+        const newContent = updatedContent !== '' ? `${updatedContent}<br>${textToInsert}` : `${textToInsert}`;
+
+        // Set the updated content back to the editor
+        editor.commands.setContent(newContent);
+
+        setBodyContent(editor.getHTML());
+        // Close modal after selection
+        setIsModalOpen(false);
+    };
+
 
     const [form, fields] = useForm({
         lastResult,
@@ -158,11 +212,12 @@ export function EditJournalForm({ data, tags, userId }) {
 
     const tagChanged = (value) => {
         setTagId(value);
-    }
+    };
+
 
     const entryTypeChanged = (value) => {
         setEntryType(value);
-    }
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -178,10 +233,7 @@ export function EditJournalForm({ data, tags, userId }) {
         if (result.status === "success") {
             await EditJournalActions(null, formData);  // Replace with actual action
             toast.success("Journal has been updated");
-        }// Append updated body content
-
-        // Replace with actual action
-
+        }
     };
 
     if (!editor) return null; // Don't render if editor is not ready
@@ -189,237 +241,240 @@ export function EditJournalForm({ data, tags, userId }) {
     const getButtonStyle = (isActive) => (isActive ? "text-blue-500" : "");
 
     return (
-        <Card className="mt-5">
-            <CardHeader>
-                <CardTitle>Edit Journal Entry</CardTitle>
-                <CardDescription>Update your journal entry below</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form className="flex flex-col gap-6" id={form.id} onSubmit={handleSubmit}>
-                    <input type="hidden" name="journalId" value={data.id} />
+        <>
+            <Card className="mt-5">
+                <CardHeader>
+                    <CardTitle>Edit Journal Entry</CardTitle>
+                    <CardDescription>Update your journal entry below</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form className="flex flex-col gap-6" id={form.id} onSubmit={handleSubmit}>
+                        <input type="hidden" name="journalId" value={data.id} />
 
-                    <div className="grid gap-2">
-                        <Label>Title</Label>
-                        <Input
-                            key={fields.title.key}
-                            name={fields.title.name}
-                            value={title}
-                            placeholder="Enter journal title"
-                            onChange={(e) => setTitle(e.target.value)}
-                        />
-                        {errors.title && errors.title.length > 0 &&
-                            errors.title.map((error, index) => {
-                                return (<p key={index} className="text-red-500 text-sm">
-                                    {error}
-                                </p>)
-                            })}
-                    </div>
-
-                    <div>
-                        <Select defaultValue={tagId} onValueChange={tagChanged}>
-                            <SelectTrigger className="w-[240px]">
-                                <SelectValue placeholder="Select Tag" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {tags.map((tag, index) => {
-                                    return (
-                                        <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
-                                    )
-                                })
-                                }
-                            </SelectContent>
-                        </Select>
-                        {errors.tagId && errors.tagId.length > 0 &&
-                            errors.tagId.map((error, index) => {
-                                return (<p key={index} className="text-red-500 text-sm">
-                                    {error}
-                                </p>)
-                            })}
-                    </div>
-
-                    <div>
-                        <Select defaultValue={entryType} onValueChange={entryTypeChanged}>
-                            <SelectTrigger className="w-[240px]">
-                                <SelectValue placeholder="Select Entry Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {entryTypes.map((entryType, index) => {
-                                    return (
-                                        <SelectItem key={entryType.id} value={entryType.id}>{entryType.label}</SelectItem>
-                                    )
-                                })
-                                }
-                            </SelectContent>
-                        </Select>
-                        {errors.entryType && errors.entryType.length > 0 &&
-                            errors.entryType.map((error, index) => {
-                                return (<p key={index} className="text-red-500 text-sm">
-                                    {error}
-                                </p>)
-                            })}
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label>Journal Entry Content</Label>
-                        <div className="toolbar-icons flex gap-2 mb-2">
-                            {/* Custom Toolbar Buttons */}
-                            <Button
-                                type="button" // Prevent default form submission
-                                onClick={() => {
-                                    editor.chain().focus().toggleBold().run()
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive('bold'))}
-                                title="Bold (Ctrl+B)"
-                            >
-                                <BoldIcon />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().toggleItalic().run()
-                                    toggleDeepestElementLightTheme();
-                                }
-                                }
-                                className={getButtonStyle(editor.isActive('italic'))}
-                                title="Italic (Ctrl+I)"
-                            >
-                                <ItalicIcon />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={
-                                    () => {
-                                        editor.chain().focus().toggleStrike().run();
-                                        toggleDeepestElementLightTheme();
-                                    }
-                                }
-                                className={getButtonStyle(editor.isActive('strike'))}
-                                title="Strikethrough (Ctrl+Shift+X)"
-                            >
-                                <StrikeIcon />
-                            </Button>
-                            {/* Handle Heading 1 */}
-                            <Button
-                                type="button"
-                                onClick={
-                                    () => {
-                                        handleHeading(1)
-                                        toggleDeepestElementLightTheme();
-                                    }
-                                }
-                                className={getButtonStyle(editor.isActive('heading', { level: 1 }))}
-                                title="Heading 1 (Ctrl+Alt+1)"
-                            >
-                                <Heading1 />
-                            </Button>
-                            {/* Handle Heading 2 */}
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    handleHeading(2);
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive('heading', { level: 2 }))}
-                                title="Heading 2 (Ctrl+Alt+2)"
-                            >
-                                <Heading2 />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={
-                                    () => {
-                                        editor.chain().focus().toggleBulletList().run();
-                                        toggleDeepestElementLightTheme();
-                                    }
-                                }
-                                className={getButtonStyle(editor.isActive('bulletList'))}
-                                title="Bullet List (Ctrl+Shift+8)"
-                            >
-                                <List />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().toggleOrderedList().run();
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive('orderedList'))}
-                                title="Ordered List (Ctrl+Shift+7)"
-                            >
-                                <ListOrdered />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().toggleCodeBlock().run();
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive('codeBlock'))}
-                                title="Code Block (Ctrl+Shift+C)"
-                            >
-                                <Code />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={
-                                    () => {
-                                        editor.chain().focus().toggleBlockquote().run();
-                                        toggleDeepestElementLightTheme();
-                                    }
-                                }
-                                className={getButtonStyle(editor.isActive('blockquote'))}
-                                title="Blockquote (Ctrl+Shift+B)"
-                            >
-                                <Quote />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('left').run()
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive({ textAlign: 'left' }))}
-                                title="Align Left"
-                            >
-                                <AlignLeft />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('center').run()
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive({ textAlign: 'center' }))}
-                                title="Align Center"
-                            >
-                                <AlignCenter />
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('right').run()
-                                    toggleDeepestElementLightTheme();
-                                }}
-                                className={getButtonStyle(editor.isActive({ textAlign: 'right' }))}
-                                title="Align Right"
-                            >
-                                <AlignRight />
-                            </Button>
+                        <div className="grid gap-2">
+                            <Label>Title</Label>
+                            <Input
+                                key={fields.title.key}
+                                name={fields.title.name}
+                                value={title}
+                                placeholder="Enter journal title"
+                                onChange={(e) => setTitle(e.target.value)}
+                            />
+                            {errors.title && errors.title.length > 0 &&
+                                errors.title.map((error, index) => (
+                                    <p key={index} className="text-red-500 text-sm">
+                                        {error}
+                                    </p>
+                                ))}
                         </div>
-                        <EditorContent editor={editor} className="border p-2 rounded" />
-                        {errors.body && errors.body.length > 0 &&
-                            errors.body.map((error, index) => {
-                                return (<p key={index} className="text-red-500 text-sm">
-                                    {error}
-                                </p>)
-                            })}
-                    </div>
 
-                    <SubmitButton text="Update Journal Entry" />
-                </form>
-            </CardContent>
-        </Card>
+                        <div>
+                            <Select defaultValue={tagId} onValueChange={tagChanged}>
+                                <SelectTrigger className="w-[240px]">
+                                    <SelectValue placeholder="Select Tag" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {tags.map((tag) => (
+                                        <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.tagId && errors.tagId.length > 0 &&
+                                errors.tagId.map((error, index) => (
+                                    <p key={index} className="text-red-500 text-sm">
+                                        {error}
+                                    </p>
+                                ))}
+                        </div>
+
+                        <div>
+                            <Select defaultValue={entryType} onValueChange={entryTypeChanged}>
+                                <SelectTrigger className="w-[240px]">
+                                    <SelectValue placeholder="Select Entry Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {entryTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.entryType && errors.entryType.length > 0 &&
+                                errors.entryType.map((error, index) => (
+                                    <p key={index} className="text-red-500 text-sm">
+                                        {error}
+                                    </p>
+                                ))}
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Journal Entry Content</Label>
+                            <div className="toolbar-icons flex gap-2 mb-2">
+                                {/* Custom Toolbar Buttons */}
+                                <Button
+                                    type="button" // Prevent default form submission
+                                    onClick={() => {
+                                        editor.chain().focus().toggleBold().run()
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive('bold'))}
+                                    title="Bold (Ctrl+B)"
+                                >
+                                    <BoldIcon />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().toggleItalic().run()
+                                        toggleDeepestElementLightTheme();
+                                    }
+                                    }
+                                    className={getButtonStyle(editor.isActive('italic'))}
+                                    title="Italic (Ctrl+I)"
+                                >
+                                    <ItalicIcon />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={
+                                        () => {
+                                            editor.chain().focus().toggleStrike().run();
+                                            toggleDeepestElementLightTheme();
+                                        }
+                                    }
+                                    className={getButtonStyle(editor.isActive('strike'))}
+                                    title="Strikethrough (Ctrl+Shift+X)"
+                                >
+                                    <StrikeIcon />
+                                </Button>
+                                {/* Handle Heading 1 */}
+                                <Button
+                                    type="button"
+                                    onClick={
+                                        () => {
+                                            handleHeading(1)
+                                            toggleDeepestElementLightTheme();
+                                        }
+                                    }
+                                    className={getButtonStyle(editor.isActive('heading', { level: 1 }))}
+                                    title="Heading 1 (Ctrl+Alt+1)"
+                                >
+                                    <Heading1 />
+                                </Button>
+                                {/* Handle Heading 2 */}
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        handleHeading(2);
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive('heading', { level: 2 }))}
+                                    title="Heading 2 (Ctrl+Alt+2)"
+                                >
+                                    <Heading2 />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={
+                                        () => {
+                                            editor.chain().focus().toggleBulletList().run();
+                                            toggleDeepestElementLightTheme();
+                                        }
+                                    }
+                                    className={getButtonStyle(editor.isActive('bulletList'))}
+                                    title="Bullet List (Ctrl+Shift+8)"
+                                >
+                                    <List />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().toggleOrderedList().run();
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive('orderedList'))}
+                                    title="Ordered List (Ctrl+Shift+7)"
+                                >
+                                    <ListOrdered />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().toggleCodeBlock().run();
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive('codeBlock'))}
+                                    title="Code Block (Ctrl+Shift+C)"
+                                >
+                                    <Code />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={
+                                        () => {
+                                            editor.chain().focus().toggleBlockquote().run();
+                                            toggleDeepestElementLightTheme();
+                                        }
+                                    }
+                                    className={getButtonStyle(editor.isActive('blockquote'))}
+                                    title="Blockquote (Ctrl+Shift+B)"
+                                >
+                                    <Quote />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('left').run()
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive({ textAlign: 'left' }))}
+                                    title="Align Left"
+                                >
+                                    <AlignLeft />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('center').run()
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive({ textAlign: 'center' }))}
+                                    title="Align Center"
+                                >
+                                    <AlignCenter />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('right').run()
+                                        toggleDeepestElementLightTheme();
+                                    }}
+                                    className={getButtonStyle(editor.isActive({ textAlign: 'right' }))}
+                                    title="Align Right"
+                                >
+                                    <AlignRight />
+                                </Button>
+                            </div>
+                            <EditorContent editor={editor} className="border p-2 rounded" />
+                            {errors.body && errors.body.length > 0 &&
+                                errors.body.map((error, index) => {
+                                    return (<p key={index} className="text-red-500 text-sm">
+                                        {error}
+                                    </p>)
+                                })}
+                        </div>
+
+                        <SubmitButton text="Update Journal Entry" />
+                    </form>
+                </CardContent>
+            </Card>
+
+
+            <BibleSearchModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                searchResults={searchResults}
+                onVerseSelect={handleInsertBibleVerse}
+            />
+        </>
     );
 }
-``

@@ -21,7 +21,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { SubmitButton } from "@/app/components/dashboard/SubmitButtons";
@@ -50,14 +50,15 @@ import prisma from "@/app/utils/db";
 import { redirect } from "next/navigation";
 import { useFormState } from "react-dom";
 import { toast } from "sonner";
-// Importing useTheme
-
+import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
 
 export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId, addNewToJournalEntries }) {
     const [lastResult, action] = useFormState(CreateJournalAction, undefined);
     const [bodyContent, setBodyContent] = useState(""); // State for TipTap content
-    // const action = CreateJournalAction;
     const [isEditorReady, setIsEditorReady] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // State for handling /query
+    const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
+    const [searchResults, setSearchResults] = useState([]); // State to store Bible search
     const { theme } = useTheme();
     const [errors, setErrors] = useState({} as any);
     const [tagId, setTagId] = useState("");
@@ -96,12 +97,61 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         content: "",
         onUpdate({ editor }) {
             setBodyContent(editor.getHTML()); // Update state on every change
+            setSearchQuery("");
+            // Detect /word for Bible search
+            const lastText = editor.getText();
+            const match = lastText.match(/\/([^\/]+)\/(?!\/)/);
+            if (match) {
+                const query = match[1];
+                setSearchQuery(query);
+            }
+
         },
         onCreate() {
             // Editor is now ready
             setIsEditorReady(true);
         },
     });
+
+    // Fetch Bible search results
+    useEffect(() => {
+        if (searchQuery && searchQuery !== "") {
+            fetch(`https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/search?query=${searchQuery}&sort=relevance`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-key": process.env.NEXT_PUBLIC_BIBLE_API_KEY
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setSearchResults(data.data); setIsModalOpen(true);
+                })
+        }
+    }, [searchQuery]);
+
+    const handleInsertBibleVerse = (verse) => {
+        const textToInsert = `${verse.reference}: "${verse.text}"`; // Format the reference and text
+
+        // Assuming the query starts with "/" and ends with the query term (e.g., /sin)
+        const queryRegex = /\/([^\/]+)\/(?!\/)/;
+
+        // Get the current content of the editor
+        const currentContent = editor.getText();
+
+        // Find and remove only the query from the current content (e.g., /sin)
+        const updatedContent = currentContent.replace(queryRegex, "");
+
+        // Ensure new content starts on a new line with HTML line breaks
+        const newContent = updatedContent !== '' ? `${updatedContent}<br>${textToInsert}` : `${textToInsert}`;
+
+        // Set the updated content back to the editor
+        editor.commands.setContent(newContent);
+
+        setBodyContent(editor.getHTML());
+        // Close modal after selection
+        setIsModalOpen(false);
+    };
 
     const getDeepestElement = (element) => {
         let deepest = element;
@@ -134,11 +184,8 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         }
     }, [theme, isEditorReady]);
 
-
-
     const handleSubmit = async (event) => {
         event.preventDefault();
-
 
         const formData = new FormData(event.target);
         formData.append("body", bodyContent);
@@ -150,13 +197,11 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         }) as any;
         setErrors(result.error ? result.error : {});
         if (result.status === "success") {
-            const newItem = await CreateJournalAction(null, formData); // Replace with actual action
-            addNewToJournalEntries(newItem);
-            // window.location.reload();
-            setIsEditorOpen(false);
-            toast.success("Journal has been created");
+            const newItem = await CreateJournalAction(null, formData); // Call the action to create a journal entry
+            addNewToJournalEntries(newItem); // Add the new journal entry to the list
+            setIsEditorOpen(false); // Close the editor dialog
+            toast.success("Journal has been created"); // Show success message
         }
-        // action(result);
     };
 
     if (!editor) return null; // Render nothing if editor is not initialized
@@ -173,52 +218,58 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
 
     const tagChanged = (value) => {
         setTagId(value);
-    }
+    };
 
     return (
-        <div className="flex flex-col ">
-            <Card >
+        <div className="flex flex-col">
+
+            <Card>
                 <CardHeader>
                     <CardTitle>Create Journal Entry</CardTitle>
                     <CardDescription>
                         Create your journal entry here. Click the button below once you're done.
                     </CardDescription>
                 </CardHeader>
-                <form id={form.id} onSubmit={handleSubmit} action={action} >
+                <form id={form.id} onSubmit={handleSubmit} action={action}>
                     <CardContent>
                         <div className="flex flex-col gap-y-6">
                             <div className="grid gap-2">
                                 <Label>Journal Entry Title</Label>
-                                <Input key={fields.title.key}
+                                <Input
+                                    key={fields.title.key}
                                     name={fields.title.name}
-                                    defaultValue={fields.title.initialValue} placeholder="Enter journal entry title" />
-                                {errors.title && errors.title.length > 0 &&
-                                    errors.title.map((error, index) => {
-                                        return (<p key={index} className="text-red-500 text-sm">
+                                    defaultValue={fields.title.initialValue}
+                                    placeholder="Enter journal entry title"
+                                />
+                                {errors.title &&
+                                    errors.title.length > 0 &&
+                                    errors.title.map((error, index) => (
+                                        <p key={index} className="text-red-500 text-sm">
                                             {error}
-                                        </p>)
-                                    })}
+                                        </p>
+                                    ))}
                             </div>
+
                             <div>
                                 <Select onValueChange={tagChanged}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Select Tag" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {data.map((tag, index) => {
-                                            return (
-                                                <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
-                                            )
-                                        })
-                                        }
+                                        {data.map((tag) => (
+                                            <SelectItem key={tag.id} value={tag.id}>
+                                                {tag.name}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.tagId && errors.tagId.length > 0 &&
-                                    errors.tagId.map((error, index) => {
-                                        return (<p key={index} className="text-red-500 text-sm">
+                                {errors.tagId &&
+                                    errors.tagId.length > 0 &&
+                                    errors.tagId.map((error, index) => (
+                                        <p key={index} className="text-red-500 text-sm">
                                             {error}
-                                        </p>)
-                                    })}
+                                        </p>
+                                    ))}
                             </div>
 
                             <div className="grid gap-2">
@@ -226,12 +277,12 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                 {/* Custom Toolbar with Icons and Tooltips */}
                                 <div className="toolbar-icons flex gap-2 mb-2">
                                     <Button
-                                        type="button" // Prevent default form submission
+                                        type="button"
                                         onClick={() => {
-                                            editor.chain().focus().toggleBold().run()
+                                            editor.chain().focus().toggleBold().run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive('bold'))}
+                                        className={getButtonStyle(editor.isActive("bold"))}
                                         title="Bold (Ctrl+B)"
                                     >
                                         <BoldIcon />
@@ -239,63 +290,54 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                     <Button
                                         type="button"
                                         onClick={() => {
-                                            editor.chain().focus().toggleItalic().run()
+                                            editor.chain().focus().toggleItalic().run();
                                             toggleDeepestElementLightTheme();
-                                        }
-                                        }
-                                        className={getButtonStyle(editor.isActive('italic'))}
+                                        }}
+                                        className={getButtonStyle(editor.isActive("italic"))}
                                         title="Italic (Ctrl+I)"
                                     >
                                         <ItalicIcon />
                                     </Button>
                                     <Button
                                         type="button"
-                                        onClick={
-                                            () => {
-                                                editor.chain().focus().toggleStrike().run();
-                                                toggleDeepestElementLightTheme();
-                                            }
-                                        }
-                                        className={getButtonStyle(editor.isActive('strike'))}
+                                        onClick={() => {
+                                            editor.chain().focus().toggleStrike().run();
+                                            toggleDeepestElementLightTheme();
+                                        }}
+                                        className={getButtonStyle(editor.isActive("strike"))}
                                         title="Strikethrough (Ctrl+Shift+X)"
                                     >
                                         <StrikeIcon />
                                     </Button>
-                                    {/* Handle Heading 1 */}
                                     <Button
                                         type="button"
-                                        onClick={
-                                            () => {
-                                                handleHeading(1)
-                                                toggleDeepestElementLightTheme();
-                                            }
-                                        }
-                                        className={getButtonStyle(editor.isActive('heading', { level: 1 }))}
+                                        onClick={() => {
+                                            handleHeading(1);
+                                            toggleDeepestElementLightTheme();
+                                        }}
+                                        className={getButtonStyle(editor.isActive("heading", { level: 1 }))}
                                         title="Heading 1 (Ctrl+Alt+1)"
                                     >
                                         <Heading1 />
                                     </Button>
-                                    {/* Handle Heading 2 */}
                                     <Button
                                         type="button"
                                         onClick={() => {
                                             handleHeading(2);
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive('heading', { level: 2 }))}
+                                        className={getButtonStyle(editor.isActive("heading", { level: 2 }))}
                                         title="Heading 2 (Ctrl+Alt+2)"
                                     >
                                         <Heading2 />
                                     </Button>
                                     <Button
                                         type="button"
-                                        onClick={
-                                            () => {
-                                                editor.chain().focus().toggleBulletList().run();
-                                                toggleDeepestElementLightTheme();
-                                            }
-                                        }
-                                        className={getButtonStyle(editor.isActive('bulletList'))}
+                                        onClick={() => {
+                                            editor.chain().focus().toggleBulletList().run();
+                                            toggleDeepestElementLightTheme();
+                                        }}
+                                        className={getButtonStyle(editor.isActive("bulletList"))}
                                         title="Bullet List (Ctrl+Shift+8)"
                                     >
                                         <List />
@@ -306,7 +348,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                             editor.chain().focus().toggleOrderedList().run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive('orderedList'))}
+                                        className={getButtonStyle(editor.isActive("orderedList"))}
                                         title="Ordered List (Ctrl+Shift+7)"
                                     >
                                         <ListOrdered />
@@ -317,20 +359,18 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                             editor.chain().focus().toggleCodeBlock().run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive('codeBlock'))}
+                                        className={getButtonStyle(editor.isActive("codeBlock"))}
                                         title="Code Block (Ctrl+Shift+C)"
                                     >
                                         <Code />
                                     </Button>
                                     <Button
                                         type="button"
-                                        onClick={
-                                            () => {
-                                                editor.chain().focus().toggleBlockquote().run();
-                                                toggleDeepestElementLightTheme();
-                                            }
-                                        }
-                                        className={getButtonStyle(editor.isActive('blockquote'))}
+                                        onClick={() => {
+                                            editor.chain().focus().toggleBlockquote().run();
+                                            toggleDeepestElementLightTheme();
+                                        }}
+                                        className={getButtonStyle(editor.isActive("blockquote"))}
                                         title="Blockquote (Ctrl+Shift+B)"
                                     >
                                         <Quote />
@@ -338,10 +378,10 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                     <Button
                                         type="button"
                                         onClick={() => {
-                                            editor.chain().focus().setTextAlign('left').run()
+                                            editor.chain().focus().setTextAlign("left").run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: 'left' }))}
+                                        className={getButtonStyle(editor.isActive({ textAlign: "left" }))}
                                         title="Align Left"
                                     >
                                         <AlignLeft />
@@ -349,10 +389,10 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                     <Button
                                         type="button"
                                         onClick={() => {
-                                            editor.chain().focus().setTextAlign('center').run()
+                                            editor.chain().focus().setTextAlign("center").run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: 'center' }))}
+                                        className={getButtonStyle(editor.isActive({ textAlign: "center" }))}
                                         title="Align Center"
                                     >
                                         <AlignCenter />
@@ -360,22 +400,32 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                     <Button
                                         type="button"
                                         onClick={() => {
-                                            editor.chain().focus().setTextAlign('right').run()
+                                            editor.chain().focus().setTextAlign("right").run();
                                             toggleDeepestElementLightTheme();
                                         }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: 'right' }))}
+                                        className={getButtonStyle(editor.isActive({ textAlign: "right" }))}
                                         title="Align Right"
                                     >
                                         <AlignRight />
                                     </Button>
                                 </div>
                                 <EditorContent editor={editor} className="border p-2 rounded" />
-                                {errors.body && errors.body.length > 0 &&
-                                    errors.body.map((error, index) => {
-                                        return (<p key={index} className="text-red-500 text-sm">
+                                {/* Bible search modal */}
+                                {isModalOpen && (
+                                    <BibleSearchModal
+                                        isOpen={isModalOpen}
+                                        onClose={() => setIsModalOpen(false)}
+                                        searchResults={searchResults}
+                                        onVerseSelect={handleInsertBibleVerse}
+                                    />
+                                )}
+                                {errors.body &&
+                                    errors.body.length > 0 &&
+                                    errors.body.map((error, index) => (
+                                        <p key={index} className="text-red-500 text-sm">
                                             {error}
-                                        </p>)
-                                    })}
+                                        </p>
+                                    ))}
                             </div>
                         </div>
                     </CardContent>
@@ -384,6 +434,6 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                     </CardFooter>
                 </form>
             </Card>
-        </div >
+        </div>
     );
 }
