@@ -129,26 +129,35 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
     const handleInsertBibleVerse = (verse) => {
         const textToInsert = `${verse.reference}: "${verse.text}"`; // Format the reference and text
 
-        // Assuming the query starts with "/" and ends with the query term (e.g., /sin)
+        // Regex to match the query enclosed in backslashes (e.g., \sin\)
         const queryRegex = /\\([^\\]+)\\(?!\\)/;
 
-        // Get the current content of the editor
-        const currentContent = editor?.getText();
+        // Get the current HTML content of the editor
+        const currentContent = editor?.getHTML();
 
-        // Find and remove only the query from the current content (e.g., /sin)
+        // Remove the query term (e.g., \sin\) from the current content
         const updatedContent = currentContent.replace(queryRegex, "");
 
-        // Ensure new content starts on a new line with HTML line breaks
-        const newContent = updatedContent !== '' ? `${updatedContent}<br>${textToInsert}` : `${textToInsert}`;
+        // Create a temporary div to manipulate the content as DOM elements
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = updatedContent;
+
+        // Ensure the new verse is added at the correct location.
+        // You can customize this logic to insert at a specific position (like cursor position).
+        const newElement = document.createElement("p");
+        newElement.innerHTML = textToInsert;
+
+        tempDiv.appendChild(newElement);
 
         // Set the updated content back to the editor
-        editor?.commands.setContent(newContent);
+        editor?.commands.setContent(tempDiv.innerHTML);
 
+        // Update the state with the new HTML content
         setBody(editor?.getHTML());
-        // Close modal after selection
+
+        // Close the modal after selection
         setIsModalOpen(false);
     };
-
 
     const handleSubmit = async (event) => {
         event.preventDefault();
