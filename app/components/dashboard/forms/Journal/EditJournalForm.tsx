@@ -119,6 +119,10 @@ export function EditJournalForm({ data, tags, userId }) {
     //         setBody(data.body);
     // }, [data.body, editor])
 
+    useEffect(() => {
+        setIsModalOpen(false);
+    }, [])
+
 
     useEffect(() => {
         if (searchQuery && searchQuery !== "") {
@@ -251,9 +255,9 @@ export function EditJournalForm({ data, tags, userId }) {
         setGenerateDescription(e.target.value);
     }
 
-    const setRootEditor = async (newEditor) => {
+    const setRootEditor = (newEditor) => {
         if (!editor) {
-            await setEditor(newEditor);
+            setEditor(newEditor);
             // editor?.commands.setContent(data.body);
             // setBody(data.body);
             console.log(newEditor);

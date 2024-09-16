@@ -1,5 +1,5 @@
 import { EditorContent } from '@tiptap/react'
-import React, { useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { LinkMenu } from '../menus'
 
@@ -37,7 +37,10 @@ export const BlockEditor = ({
 
     const leftSidebar = useSidebar()
     const { editor, users, collabState } = useBlockEditor({ aiToken, ydoc, provider, bodyContent })
-    setRootEditor(editor);
+
+    useEffect(() => {
+        setRootEditor(editor);
+    }, [editor])
 
     if (!editor || !users) {
         return null

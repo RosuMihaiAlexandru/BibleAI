@@ -182,15 +182,19 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         setGenerateDescription(e.target.value);
     }
 
-    const setRootEditor = async (newEditor) => {
+    const setRootEditor = (newEditor) => {
         if (!editor) {
-            await setEditor(newEditor);
+            setEditor(newEditor);
             // editor?.commands.setContent(data.body);
             // setBody(data.body);
             console.log(newEditor);
             console.log(editor?.getHTML())
         }
     }
+
+    useEffect(() => {
+        setIsModalOpen(false);
+    }, [])
     // Spinner component as raw HTML (adapt the class names if needed)
 
     return (
@@ -249,7 +253,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                 <Label>Journal Entry Content</Label>
 
 
-                                <RootEditor setRootEditor={setRootEditor} params={{ room: "room1" }} />
+                                <RootEditor bodyContent={null} setRootEditor={setRootEditor} params={{ room: "room1" }} />
                                 {/* <EditorContent editor={editor} className="border p-2 rounded" >
                                     {isGenerationLoading && <div className="flex flex-col items-center"><Spinner text="Generating content" className={"flex w-300"} /></div>}
                                 </EditorContent> */}
