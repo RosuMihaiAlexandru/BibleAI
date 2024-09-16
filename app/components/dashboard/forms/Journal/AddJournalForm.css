@@ -52,8 +52,8 @@
 }
 
 .tiptap.ProseMirror {
-    min-height: 230px;
-    width: 100%;
+    /* min-height: 230px; */
+    width: 91%;
     /* Ensures it takes up the full width of the parent */
     max-width: 100%;
     /* Prevents it from exceeding the parent width */
@@ -64,5 +64,6 @@
     overflow-x: hidden;
     /* Prevents horizontal scrolling */
     word-break: break-word;
+    max-height: 100vh;
     /* Forces word break if necessary */
 }

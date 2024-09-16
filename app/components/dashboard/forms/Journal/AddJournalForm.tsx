@@ -4,6 +4,7 @@ import { useState, useEffect, useActionState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Bold from "@tiptap/extension-bold";
+import Image from '@tiptap/extension-image';
 import Italic from "@tiptap/extension-italic";
 import Strike from "@tiptap/extension-strike";
 import Heading from "@tiptap/extension-heading";
@@ -38,6 +39,12 @@ import {
     AlignLeft,
     AlignCenter,
     AlignRight,
+    ImageIcon,
+    WandSparklesIcon,
+    Wand2Icon,
+    LoaderIcon,
+    LucideWand2,
+    LucideCloudLightning,
 } from "lucide-react";
 import './AddJournalForm.css';
 import { CreateJournalAction } from "@/app/actions";
@@ -50,23 +57,43 @@ import prisma from "@/app/utils/db";
 import { redirect } from "next/navigation";
 import { useFormState } from "react-dom";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/app/components/shared/Spinner";
+import CustomUploadButton from "@/app/components/shared/CustomUploadButton";
+import RootEditor from "@/app/components/editor/RootEditor";
+import useStore from "@/app/zustand/useStore";
+const MotionButton = motion(Button);
 
 export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId, addNewToJournalEntries }) {
     const [lastResult, action] = useFormState(CreateJournalAction, undefined);
-    const [bodyContent, setBodyContent] = useState(""); // State for TipTap content
+    const { body, setBody, searchQuery, setSearchQuery } = useStore() // State for TipTap content
     const [isEditorReady, setIsEditorReady] = useState(false);
-    const [searchQuery, setSearchQuery] = useState(""); // State for handling /query
+    // const [searchQuery, setSearchQuery] = useState(""); // State for handling /query
     const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
     const [searchResults, setSearchResults] = useState([]); // State to store Bible search
+    const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+    const [generationType, setGenerationType] = useState("");
     const { theme } = useTheme();
     const [errors, setErrors] = useState({} as any);
     const [tagId, setTagId] = useState("");
+    const [generateDescription, setGenerateDescription] = useState("")
+    const [isGenerationLoading, setIsGenerationLoading] = useState(false);
+    const [uploadedFileName, setUploadedFileName] = useState("")
+    const [editor, setEditor] = useState(null);
+
     const [form, fields] = useForm({
         lastResult,
 
         onValidate({ formData }) {
-            formData.append("body", bodyContent); // Append updated body content
+            formData.append("body", body); // Append updated body content
             return parseWithZod(formData, {
                 schema: JournalSchema,
             });
@@ -74,44 +101,12 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
 
     });
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Bold,
-            Italic,
-            Strike,
-            Heading.configure({ levels: [1, 2] }), // Configure heading to allow H1 and H2
-            BulletList,
-            OrderedList,
-            CodeBlock,
-            Blockquote,
-            TextAlign.configure({ types: ['heading', 'paragraph'] }), // Configure TextAlign for heading and paragraph
-        ],
-        editorProps: {
-            attributes: {
-                class: cn(
-                    'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none max-w-none [&_ol]:list-decimal [&_ul]:list-disc'
-                ),
-            },
-        },
-        content: "",
-        onUpdate({ editor }) {
-            setBodyContent(editor.getHTML()); // Update state on every change
-            setSearchQuery("");
-            // Detect /word for Bible search
-            const lastText = editor.getText();
-            const match = lastText.match(/\/([^\/]+)\/(?!\/)/);
-            if (match) {
-                const query = match[1];
-                setSearchQuery(query);
-            }
+    const [triggeringElement, setTriggeringElement] = useState<HTMLElement | null>(null);
 
-        },
-        onCreate() {
-            // Editor is now ready
-            setIsEditorReady(true);
-        },
-    });
+    const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setTriggeringElement(event.currentTarget); // Store the clicked button reference
+    };
+
 
     // Fetch Bible search results
     useEffect(() => {
@@ -130,14 +125,15 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         }
     }, [searchQuery]);
 
+
     const handleInsertBibleVerse = (verse) => {
         const textToInsert = `${verse.reference}: "${verse.text}"`; // Format the reference and text
 
         // Assuming the query starts with "/" and ends with the query term (e.g., /sin)
-        const queryRegex = /\/([^\/]+)\/(?!\/)/;
+        const queryRegex = /\\([^\\]+)\\(?!\\)/;
 
         // Get the current content of the editor
-        const currentContent = editor.getText();
+        const currentContent = editor?.getText();
 
         // Find and remove only the query from the current content (e.g., /sin)
         const updatedContent = currentContent.replace(queryRegex, "");
@@ -146,79 +142,56 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
         const newContent = updatedContent !== '' ? `${updatedContent}<br>${textToInsert}` : `${textToInsert}`;
 
         // Set the updated content back to the editor
-        editor.commands.setContent(newContent);
+        editor?.commands.setContent(newContent);
 
-        setBodyContent(editor.getHTML());
+        setBody(editor?.getHTML());
         // Close modal after selection
         setIsModalOpen(false);
     };
 
-    const getDeepestElement = (element) => {
-        let deepest = element;
-        while (deepest.children.length > 0) {
-            deepest = deepest.children[0]; // Traverse down to the first child
-        }
-        return deepest;
-    }
-
-    const toggleLightTheme = (element) => {
-        if (element) {
-            if (theme === "light") {
-                element.classList.remove("light-theme");
-            } else {
-                element.classList.add("light-theme");
-            }
-        }
-    }
-
-    const toggleDeepestElementLightTheme = () => {
-        const editorElement = document.querySelector(".tiptap.ProseMirror");
-        const deepestElement = getDeepestElement(editorElement);
-        toggleLightTheme(deepestElement);
-    }
-
-    useEffect(() => {
-        if (isEditorReady) {
-            const editorElement = document.querySelector(".tiptap.ProseMirror");
-            toggleLightTheme(editorElement);
-        }
-    }, [theme, isEditorReady]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-
-        const formData = new FormData(event.target);
-        formData.append("body", bodyContent);
-        formData.append("entryType", selectedEntryType); // Append TipTap content
-        formData.append("tagId", tagId);
-        formData.append("userId", userId);
-        const result = parseWithZod(formData, {
-            schema: JournalSchema,
-        }) as any;
-        setErrors(result.error ? result.error : {});
-        if (result.status === "success") {
-            const newItem = await CreateJournalAction(null, formData); // Call the action to create a journal entry
-            addNewToJournalEntries(newItem); // Add the new journal entry to the list
-            setIsEditorOpen(false); // Close the editor dialog
-            toast.success("Journal has been created"); // Show success message
-        }
-    };
-
-    if (!editor) return null; // Render nothing if editor is not initialized
-
-    const getButtonStyle = (isActive) => (isActive ? "text-blue-500" : "");
-
-    const handleHeading = (level) => {
-        if (editor.can().setHeading({ level })) {
-            editor.chain().focus().setHeading({ level }).run();
-        } else {
-            console.warn(`Unable to apply heading level ${level}`);
+        if (triggeringElement) {
+            const formData = new FormData(event.target);
+            formData.append("body", body);
+            formData.append("entryType", selectedEntryType); // Append TipTap content
+            formData.append("tagId", tagId);
+            formData.append("userId", userId);
+            const result = parseWithZod(formData, {
+                schema: JournalSchema,
+            }) as any;
+            setErrors(result.error ? result.error : {});
+            if (result.status === "success") {
+                const newItem = await CreateJournalAction(null, formData); // Call the action to create a journal entry
+                addNewToJournalEntries(newItem); // Add the new journal entry to the list
+                setIsEditorOpen(false); // Close the editor dialog
+                toast.success("Journal has been created"); // Show success message
+            }
         }
     };
 
     const tagChanged = (value) => {
         setTagId(value);
     };
+
+    // // Function to handle AI Image generation and insert it into the editor
+
+
+    const handleGenerateDescriptionChange = (e) => {
+        setGenerateDescription(e.target.value);
+    }
+
+    const setRootEditor = async (newEditor) => {
+        if (!editor) {
+            await setEditor(newEditor);
+            // editor?.commands.setContent(data.body);
+            // setBody(data.body);
+            console.log(newEditor);
+            console.log(editor?.getHTML())
+        }
+    }
+    // Spinner component as raw HTML (adapt the class names if needed)
 
     return (
         <div className="flex flex-col">
@@ -274,142 +247,12 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
 
                             <div className="grid gap-2">
                                 <Label>Journal Entry Content</Label>
-                                {/* Custom Toolbar with Icons and Tooltips */}
-                                <div className="toolbar-icons flex gap-2 mb-2">
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleBold().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("bold"))}
-                                        title="Bold (Ctrl+B)"
-                                    >
-                                        <BoldIcon />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleItalic().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("italic"))}
-                                        title="Italic (Ctrl+I)"
-                                    >
-                                        <ItalicIcon />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleStrike().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("strike"))}
-                                        title="Strikethrough (Ctrl+Shift+X)"
-                                    >
-                                        <StrikeIcon />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            handleHeading(1);
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("heading", { level: 1 }))}
-                                        title="Heading 1 (Ctrl+Alt+1)"
-                                    >
-                                        <Heading1 />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            handleHeading(2);
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("heading", { level: 2 }))}
-                                        title="Heading 2 (Ctrl+Alt+2)"
-                                    >
-                                        <Heading2 />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleBulletList().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("bulletList"))}
-                                        title="Bullet List (Ctrl+Shift+8)"
-                                    >
-                                        <List />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleOrderedList().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("orderedList"))}
-                                        title="Ordered List (Ctrl+Shift+7)"
-                                    >
-                                        <ListOrdered />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleCodeBlock().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("codeBlock"))}
-                                        title="Code Block (Ctrl+Shift+C)"
-                                    >
-                                        <Code />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().toggleBlockquote().run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive("blockquote"))}
-                                        title="Blockquote (Ctrl+Shift+B)"
-                                    >
-                                        <Quote />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().setTextAlign("left").run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: "left" }))}
-                                        title="Align Left"
-                                    >
-                                        <AlignLeft />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().setTextAlign("center").run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: "center" }))}
-                                        title="Align Center"
-                                    >
-                                        <AlignCenter />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            editor.chain().focus().setTextAlign("right").run();
-                                            toggleDeepestElementLightTheme();
-                                        }}
-                                        className={getButtonStyle(editor.isActive({ textAlign: "right" }))}
-                                        title="Align Right"
-                                    >
-                                        <AlignRight />
-                                    </Button>
-                                </div>
-                                <EditorContent editor={editor} className="border p-2 rounded" />
+
+
+                                <RootEditor setRootEditor={setRootEditor} params={{ room: "room1" }} />
+                                {/* <EditorContent editor={editor} className="border p-2 rounded" >
+                                    {isGenerationLoading && <div className="flex flex-col items-center"><Spinner text="Generating content" className={"flex w-300"} /></div>}
+                                </EditorContent> */}
                                 {/* Bible search modal */}
                                 {isModalOpen && (
                                     <BibleSearchModal
@@ -428,9 +271,36 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                     ))}
                             </div>
                         </div>
+
+
+                        <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+                            <DialogContent className="flex flex-col">
+                                <DialogHeader>
+                                    <DialogTitle>Generation Text</DialogTitle>
+                                </DialogHeader>
+
+                                <div className="flex flex-col justify-center items-start gap-5">
+                                    <Input
+                                        onChange={handleGenerateDescriptionChange}
+                                        name="generateContent"
+                                        value={generateDescription}
+                                        placeholder={generationType === "image" ? "Describe the image that you want to generate" : "Describe the text that you want to generate"}
+                                    />
+                                    <MotionButton
+
+                                        variant="secondary"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
+                                    >
+                                        Submit
+                                    </MotionButton>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </CardContent>
                     <CardFooter>
-                        <SubmitButton text="Create Journal Entry" />
+                        <MotionButton style={{ width: '200px' }} className="w-100" data-action="submit" onClick={handleButtonClick} >Create Journal Entry</MotionButton>
                     </CardFooter>
                 </form>
             </Card>

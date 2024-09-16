@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useeditor, editorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Bold from "@tiptap/extension-bold";
 import Italic from "@tiptap/extension-italic";
 import Strike from "@tiptap/extension-strike";
+import Image from '@tiptap/extension-image';
 import Heading from "@tiptap/extension-heading";
 import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
@@ -35,6 +36,10 @@ import {
     AlignLeft,
     AlignCenter,
     AlignRight,
+    WandSparklesIcon,
+    LucideCloudLightning,
+    TextSelection,
+    ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useFormState } from "react-dom";
@@ -50,6 +55,20 @@ import {
 } from "@/components/ui/select"
 
 import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/app/components/shared/Spinner";
+const MotionButton = motion(Button);
+import { motion } from "framer-motion";
+import { UploadButton } from "@/app/utils/UploadthingComponents";
+import CustomUploadButton from "@/app/components/shared/CustomUploadButton";
+import useStore from "@/app/zustand/useStore";
+import RootEditor from "@/app/components/editor/RootEditor";
 
 interface iAppProps {
     data: {
@@ -63,17 +82,24 @@ interface iAppProps {
 
 export function EditJournalForm({ data, tags, userId }) {
     const [lastResult, action] = useFormState(EditJournalActions, undefined);
-    const [bodyContent, setBodyContent] = useState<string>(data.body); // State for TipTap content
     const [title, setTitle] = useState<string>(data.title);
     const [tagId, setTagId] = useState(data.tagId);
     const [entryType, setEntryType] = useState(data.entryType);
     const { theme } = useTheme();
-    const [isEditorReady, setIsEditorReady] = useState(false); // State to track editor readiness
+    const [iseditorReady, setIseditorReady] = useState(false); // State to track editor? readiness
     const [errors, setErrors] = useState({} as any);
-    const [searchQuery, setSearchQuery] = useState(""); // State for handling /query
+
     const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
     const [searchResults, setSearchResults] = useState([]); // State to store Bible search
+    const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+    const [generationType, setGenerationType] = useState("");
+    const [generateDescription, setGenerateDescription] = useState("")
+    const [isGenerationLoading, setIsGenerationLoading] = useState(false);
+    const [uploadedFileName, setUploadedFileName] = useState("");
+    const uploadInputRef = useRef<any>();
+    const [editor, setEditor] = useState(null);
 
+    const { body, setBody, searchQuery, setSearchQuery } = useStore() // State for TipTap content
     const entryTypes = [
         { id: 'fasting-prayer', label: 'Fasting & Prayer' },
         { id: 'gratitude', label: 'Gratitude' },
@@ -81,43 +107,18 @@ export function EditJournalForm({ data, tags, userId }) {
         { id: 'faith-journey', label: 'Faith Journey' },
     ];
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Bold,
-            Italic,
-            Strike,
-            Heading.configure({ levels: [1, 2] }),
-            BulletList,
-            OrderedList,
-            CodeBlock,
-            Blockquote,
-            TextAlign.configure({ types: ["heading", "paragraph"] }),
-        ],
-        editorProps: {
-            attributes: {
-                class: cn(
-                    'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none max-w-none [&_ol]:list-decimal [&_ul]:list-disc'
-                ),
-            },
-        },
-        content: bodyContent, // Load existing content
-        onUpdate({ editor }) {
-            setBodyContent(editor.getHTML()); // Update state on every change
-            setSearchQuery("");
-            const lastText = editor.getText();
-            const match = lastText.match(/\/([^\/]+)\/(?!\/)/);
-            if (match) {
-                const query = match[1];
-                setSearchQuery(query);
-            }
+    const [triggeringElement, setTriggeringElement] = useState<HTMLElement | null>(null);
 
-        },
-        onCreate() {
-            // Editor is now ready
-            setIsEditorReady(true);
-        },
-    });
+    const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setTriggeringElement(event.currentTarget); // Store the clicked button reference
+    };
+    // setBody(data.body);
+
+    // useEffect(() => {
+    //     if (editor)
+    //         setBody(data.body);
+    // }, [data.body, editor])
+
 
     useEffect(() => {
         if (searchQuery && searchQuery !== "") {
@@ -140,10 +141,10 @@ export function EditJournalForm({ data, tags, userId }) {
         const textToInsert = `${verse.reference}: "${verse.text}"`; // Format the reference and text
 
         // Assuming the query starts with "/" and ends with the query term (e.g., /sin)
-        const queryRegex = /\/([^\/]+)\/(?!\/)/;
+        const queryRegex = /\\([^\\]+)\\(?!\\)/;
 
-        // Get the current content of the editor
-        const currentContent = editor.getText();
+        // Get the current content of the editor?
+        const currentContent = editor?.getText();
 
         // Find and remove only the query from the current content (e.g., /sin)
         const updatedContent = currentContent.replace(queryRegex, "");
@@ -151,10 +152,10 @@ export function EditJournalForm({ data, tags, userId }) {
         // Ensure new content starts on a new line with HTML line breaks
         const newContent = updatedContent !== '' ? `${updatedContent}<br>${textToInsert}` : `${textToInsert}`;
 
-        // Set the updated content back to the editor
-        editor.commands.setContent(newContent);
+        // Set the updated content back to the editor?
+        editor?.commands.setContent(newContent);
 
-        setBodyContent(editor.getHTML());
+        setBody(editor?.getHTML());
         // Close modal after selection
         setIsModalOpen(false);
     };
@@ -164,51 +165,49 @@ export function EditJournalForm({ data, tags, userId }) {
         lastResult,
 
         onValidate({ formData }) {
-            formData.append("body", bodyContent); // Append Tiptap content before validation
+            formData.append("body", body); // Append Tiptap content before validation
             return parseWithZod(formData, { schema: JournalSchema });
         },
     });
 
-    const getDeepestElement = (element) => {
-        let deepest = element;
-        while (deepest.children.length > 0) {
-            deepest = deepest.children[0]; // Traverse down to the first child
+
+
+    const uploadFileFromUrl = async (url) => {
+        setIsGenerationLoading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', process.env.NEXT_PUBLIC_UPLOAD_PRESET);
+
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_URL, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            const imageNode = {
+                type: 'image',
+                attrs: {
+                    src: data.secure_url,
+                    alt: data.secure_url, // You can customize this
+                },
+            };
+
+            // Insert the image and an empty row
+            editor ?
+                .chain()
+                    .focus()
+                    .insertContent(imageNode) // Insert an empty paragraph (empty row)
+                    .run();
+            // Save Cloudinary image URL
+            setIsGenerationLoading(false);
+        } catch (error) {
+            // setUploadError('Failed to upload image');
+            setIsGenerationLoading(false);
         }
-        return deepest;
     }
 
-    const toggleLightTheme = (element) => {
-        if (element) {
-            if (theme === "light") {
-                element.classList.remove("light-theme");
-            } else {
-                element.classList.add("light-theme");
-            }
-        }
-    }
-
-    const toggleDeepestElementLightTheme = () => {
-        const editorElement = document.querySelector(".tiptap.ProseMirror");
-        const deepestElement = getDeepestElement(editorElement);
-        toggleLightTheme(deepestElement);
-    }
-
-    useEffect(() => {
-        if (isEditorReady) {
-            const editorElement = document.querySelector(".tiptap.ProseMirror");
-            toggleLightTheme(editorElement);
-
-            toggleDeepestElementLightTheme()
-        }
-    }, [theme, isEditorReady]);
-
-    const handleHeading = (level) => {
-        if (editor.can().setHeading({ level })) {
-            editor.chain().focus().setHeading({ level }).run();
-        } else {
-            console.warn(`Unable to apply heading level ${level}`);
-        }
-    };
 
     const tagChanged = (value) => {
         setTagId(value);
@@ -221,24 +220,47 @@ export function EditJournalForm({ data, tags, userId }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const formData = new FormData(event.target);
-        formData.append("body", bodyContent);
-        formData.append("entryType", entryType); // Append TipTap content
-        formData.append("tagId", tagId);
-        formData.append("userId", userId);
-        const result = parseWithZod(formData, {
-            schema: JournalSchema,
-        }) as any;
-        setErrors(result.error ? result.error : {});
-        if (result.status === "success") {
-            await EditJournalActions(null, formData);  // Replace with actual action
-            toast.success("Journal has been updated");
+        // Get the element that triggered the event
+        const triggeredBy = event.target as HTMLElement;
+
+        // Check if a specific button or element triggered it
+        if (triggeringElement) {
+            console.log('Form was submitted by the submit button');
+
+            const formData = new FormData(event.target);
+            formData.append("body", body);
+            formData.append("entryType", entryType); // Append TipTap content
+            formData.append("tagId", tagId);
+            formData.append("userId", userId);
+            const result = parseWithZod(formData, {
+                schema: JournalSchema,
+            }) as any;
+            setErrors(result.error ? result.error : {});
+            if (result.status === "success") {
+                await EditJournalActions(null, formData);  // Replace with actual action
+                toast.success("Journal has been updated");
+            }
         }
     };
 
-    if (!editor) return null; // Don't render if editor is not ready
+    // if (!editor) return null; // Don't render if editor? is not ready
 
-    const getButtonStyle = (isActive) => (isActive ? "text-blue-500" : "");
+    // Function to handle AI Image generation and insert it into the editor?
+
+    const handleGenerateDescriptionChange = (e) => {
+        setGenerateDescription(e.target.value);
+    }
+
+    const setRootEditor = async (newEditor) => {
+        if (!editor) {
+            await setEditor(newEditor);
+            // editor?.commands.setContent(data.body);
+            // setBody(data.body);
+            console.log(newEditor);
+            console.log(editor?.getHTML())
+        }
+    }
+
 
     return (
         <>
@@ -308,153 +330,9 @@ export function EditJournalForm({ data, tags, userId }) {
 
                         <div className="grid gap-2">
                             <Label>Journal Entry Content</Label>
-                            <div className="toolbar-icons flex gap-2 mb-2">
-                                {/* Custom Toolbar Buttons */}
-                                <Button
-                                    type="button" // Prevent default form submission
-                                    onClick={() => {
-                                        editor.chain().focus().toggleBold().run()
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive('bold'))}
-                                    title="Bold (Ctrl+B)"
-                                >
-                                    <BoldIcon />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().toggleItalic().run()
-                                        toggleDeepestElementLightTheme();
-                                    }
-                                    }
-                                    className={getButtonStyle(editor.isActive('italic'))}
-                                    title="Italic (Ctrl+I)"
-                                >
-                                    <ItalicIcon />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={
-                                        () => {
-                                            editor.chain().focus().toggleStrike().run();
-                                            toggleDeepestElementLightTheme();
-                                        }
-                                    }
-                                    className={getButtonStyle(editor.isActive('strike'))}
-                                    title="Strikethrough (Ctrl+Shift+X)"
-                                >
-                                    <StrikeIcon />
-                                </Button>
-                                {/* Handle Heading 1 */}
-                                <Button
-                                    type="button"
-                                    onClick={
-                                        () => {
-                                            handleHeading(1)
-                                            toggleDeepestElementLightTheme();
-                                        }
-                                    }
-                                    className={getButtonStyle(editor.isActive('heading', { level: 1 }))}
-                                    title="Heading 1 (Ctrl+Alt+1)"
-                                >
-                                    <Heading1 />
-                                </Button>
-                                {/* Handle Heading 2 */}
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        handleHeading(2);
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive('heading', { level: 2 }))}
-                                    title="Heading 2 (Ctrl+Alt+2)"
-                                >
-                                    <Heading2 />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={
-                                        () => {
-                                            editor.chain().focus().toggleBulletList().run();
-                                            toggleDeepestElementLightTheme();
-                                        }
-                                    }
-                                    className={getButtonStyle(editor.isActive('bulletList'))}
-                                    title="Bullet List (Ctrl+Shift+8)"
-                                >
-                                    <List />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().toggleOrderedList().run();
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive('orderedList'))}
-                                    title="Ordered List (Ctrl+Shift+7)"
-                                >
-                                    <ListOrdered />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().toggleCodeBlock().run();
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive('codeBlock'))}
-                                    title="Code Block (Ctrl+Shift+C)"
-                                >
-                                    <Code />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={
-                                        () => {
-                                            editor.chain().focus().toggleBlockquote().run();
-                                            toggleDeepestElementLightTheme();
-                                        }
-                                    }
-                                    className={getButtonStyle(editor.isActive('blockquote'))}
-                                    title="Blockquote (Ctrl+Shift+B)"
-                                >
-                                    <Quote />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().setTextAlign('left').run()
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive({ textAlign: 'left' }))}
-                                    title="Align Left"
-                                >
-                                    <AlignLeft />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().setTextAlign('center').run()
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive({ textAlign: 'center' }))}
-                                    title="Align Center"
-                                >
-                                    <AlignCenter />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        editor.chain().focus().setTextAlign('right').run()
-                                        toggleDeepestElementLightTheme();
-                                    }}
-                                    className={getButtonStyle(editor.isActive({ textAlign: 'right' }))}
-                                    title="Align Right"
-                                >
-                                    <AlignRight />
-                                </Button>
-                            </div>
-                            <EditorContent editor={editor} className="border p-2 rounded" />
+
+                            <RootEditor bodyContent={data.body} setRootEditor={setRootEditor} params={{ room: "room1" }} />
+
                             {errors.body && errors.body.length > 0 &&
                                 errors.body.map((error, index) => {
                                     return (<p key={index} className="text-red-500 text-sm">
@@ -463,7 +341,33 @@ export function EditJournalForm({ data, tags, userId }) {
                                 })}
                         </div>
 
-                        <SubmitButton text="Update Journal Entry" />
+                        {/* <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+                            <DialogContent className="flex flex-col">
+                                <DialogHeader>
+                                    <DialogTitle>Generation Text</DialogTitle>
+                                </DialogHeader>
+
+                                <div className="flex flex-col justify-center items-start gap-5">
+                                    <Input
+                                        onChange={handleGenerateDescriptionChange}
+                                        name="generateContent"
+                                        value={generateDescription}
+                                        placeholder={generationType === "image" ? "Describe the image that you want to generate" : "Describe the text that you want to generate"}
+                                    />
+                                    <MotionButton
+
+                                        variant="secondary"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
+                                    >
+                                        Submit
+                                    </MotionButton>
+                                </div>
+                            </DialogContent>
+                        </Dialog> */}
+
+                        <MotionButton style={{ width: '200px' }} className="w-100" data-action="submit" onClick={handleButtonClick} >Update Journal Entry</MotionButton>
                     </form>
                 </CardContent>
             </Card>

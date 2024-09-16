@@ -78,7 +78,7 @@ export default function ChatGPTChat() {
     const onKeyDown = (e: any) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            onSubmit();
+            onSubmit(prompt);
         }
     };
 

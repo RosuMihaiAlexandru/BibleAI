@@ -3,19 +3,18 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation'
-import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search, Sparkle } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search, Sparkle, NewspaperIcon } from 'lucide-react'
+
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components"
 import { motion } from 'framer-motion'
 
-import { ScrollArea } from "@/components/ui/scroll-area"
+
 import { Badge } from "@/components/ui/badge"
-import { useNavigate } from 'react-dom'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import {
   Edit3,
   FileText,
@@ -33,6 +32,8 @@ import {
   List,
   ListOrdered,
 } from "lucide-react"
+import { Button } from '@/components/ui/Button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const MotionButton = motion(Button)
 
@@ -51,6 +52,11 @@ export const navLinks = [
     name: "Bible Ai Chat",
     href: "/dashboard/chat-assistant",
     icon: Sparkles,
+  },
+  {
+    name: "New Page",
+    href: "/dashboard/new-page",
+    icon: NewspaperIcon,
   },
   // {
   //   name: "Pricing",
@@ -100,6 +106,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
               { icon: Edit3, label: "Journal Entries", path: "/dashboard/journals" },
               { icon: Sparkles, label: "Bible Ai Chat", path: "/dashboard/chat-assistant" },
+              { icon: NewspaperIcon, label: "New Page", path: "/dashboard/new-page" },
               // { icon: Edit3, label: "Journal Entries" },
               // { icon: FileText, label: "Notes & Highlights" },
               // { icon: Star, label: "Saved Insights" },

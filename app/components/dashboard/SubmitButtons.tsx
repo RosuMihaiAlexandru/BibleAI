@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/Button";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
@@ -9,14 +9,14 @@ interface iAppProps {
   text: string;
   className?: string;
   variant?:
-    | "link"
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | null
-    | undefined;
+  | "link"
+  | "default"
+  | "destructive"
+  | "outline"
+  | "secondary"
+  | "ghost"
+  | null
+  | undefined;
 }
 
 export function SubmitButton({ text, className, variant }: iAppProps) {

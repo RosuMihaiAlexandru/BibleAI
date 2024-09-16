@@ -17,7 +17,7 @@ export function Hero() {
         <div className="flex flex-row items-center justify-between text-sm lg:justify-start">
           <Link href="/" className="flex items-center gap-2">
             {/* <Image src={Logo} className="size-10" alt="Logo" /> */}
-            <BookOpen/>
+            <BookOpen />
 
             <h4 className="text-3xl font-semibold">
               Gen<span className="text-primary">BibleAI</span>
@@ -43,16 +43,16 @@ export function Hero() {
         <div className="relative items-center w-full py-12 lg:py-20">
           <div className="text-center">
             <span className="text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
-            Modern Tools for Timeless Faith
+              Modern Tools for Timeless Faith
             </span>
 
             <h1 className="mt-8 text-4xl sm:text-6xl md:text-7xl lg:text-7xl font-medium leading-none">
-            Transform Your Bible Study{" "}
+              Transform Your Bible Study{" "}
               <span className="block text-primary">with AI</span>
             </h1>
 
             <p className="max-w-xl mx-auto mt-4 text-base font-light lg:text-lg text-muted-foreground tracking-tighter">
-            Dive deeper into scripture with personalized insights and seamless journaling. Start your spiritual journey with AI-driven understanding.
+              Dive deeper into scripture with personalized insights and seamless journaling. Start your spiritual journey with AI-driven understanding.
             </p>
             <div className="flex items-center gap-x-5 w-full justify-center mt-5 ">
               <LoginLink>
