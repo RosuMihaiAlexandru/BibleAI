@@ -72,7 +72,7 @@ import RootEditor from "@/app/components/editor/RootEditor";
 import useStore from "@/app/zustand/useStore";
 const MotionButton = motion(Button);
 
-export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId, addNewToJournalEntries }) {
+export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryType, userId, addNewToJournalEntries, verseContent }) {
     const [lastResult, action] = useFormState(CreateJournalAction, undefined);
     const { body, setBody, searchQuery, setSearchQuery } = useStore() // State for TipTap content
     const [isEditorReady, setIsEditorReady] = useState(false);
@@ -173,7 +173,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
             setErrors(result.error ? result.error : {});
             if (result.status === "success") {
                 const newItem = await CreateJournalAction(null, formData); // Call the action to create a journal entry
-                addNewToJournalEntries(newItem); // Add the new journal entry to the list
+                if (addNewToJournalEntries) addNewToJournalEntries(newItem); // Add the new journal entry to the list
                 setIsEditorOpen(false); // Close the editor dialog
                 toast.success("Journal has been created"); // Show success message
             }
@@ -204,6 +204,18 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
     useEffect(() => {
         setIsModalOpen(false);
     }, [])
+
+    useEffect(() => {
+        if (verseContent && editor) {
+            const newElement = document.createElement("p");
+            newElement.innerHTML = verseContent;
+
+            alert(verseContent)
+            // Set the updated content back to the editor
+            editor?.commands.setContent(verseContent);
+            // setBody(editor?.getHTML());
+        }
+    }, [editor])
     // Spinner component as raw HTML (adapt the class names if needed)
 
     return (

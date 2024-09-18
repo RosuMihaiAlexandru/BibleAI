@@ -44,6 +44,7 @@ export const useBlockEditor = ({
   )
 
   const {body, searchQuery, setSearchQuery, setBody} = useStore()
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const editor = useEditor(
     {
@@ -67,7 +68,8 @@ export const useBlockEditor = ({
           ctx.editor.commands.focus('start', { scrollIntoView: true })
         }
         else{
-          ctx.editor.commands.setContent(bodyContent)
+          if(bodyContent)
+            ctx.editor.commands.setContent(bodyContent)
         }
       },
         onUpdate: ({ editor }) => {
@@ -80,7 +82,6 @@ export const useBlockEditor = ({
                 const query = match[1];
                 setSearchQuery(query);
             }
-
         },
       extensions: [
         ...ExtensionKit({

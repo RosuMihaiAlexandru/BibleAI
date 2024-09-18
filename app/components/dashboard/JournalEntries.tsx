@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import prisma from "@/app/utils/db";
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -45,6 +45,7 @@ import {
 import { notFound, redirect } from "next/navigation";
 import AddJournalForm from "./forms/Journal/AddJournalForm"
 import { useRouter } from 'next/navigation';
+import { useTheme } from "next-themes";
 
 const MotionButton = motion(Button)
 
@@ -92,6 +93,7 @@ function getDeepestElement(element) {
 
 export default function JournalEntries({ data, tags, userId }) {
     const [darkMode, setDarkMode] = useState(false)
+    const { theme } = useTheme();
     const [reminders, setReminders] = useState(false)
     const [selectedTab, setSelectedTab] = useState("all")
     const [isNavExpanded, setIsNavExpanded] = useState(true)
@@ -101,6 +103,11 @@ export default function JournalEntries({ data, tags, userId }) {
     const [journalEntries, setJournalEntries] = useState(data);
     const router = useRouter();
 
+
+    useEffect(() => {
+        alert(theme);
+        setDarkMode(theme !== 'light');
+    }, [theme])
 
     // console.log(getDeepestText(data[0].body))
     const editor = useEditor({
@@ -201,7 +208,7 @@ export default function JournalEntries({ data, tags, userId }) {
                                 transition={{ duration: 0.5, delay: 0.2 }}
                                 className="mb-6 flex justify-between items-center"
                             >
-                                <Dialog open={isNewEntryModalOpen} setIsNewEntryModalOpen={setIsNewEntryModalOpen}>
+                                <Dialog open={isNewEntryModalOpen} onOpenChange={setIsNewEntryModalOpen}>
                                     <DialogTrigger asChild>
                                         <MotionButton
                                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6"

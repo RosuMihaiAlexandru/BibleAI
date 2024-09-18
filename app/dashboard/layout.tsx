@@ -3,7 +3,7 @@
 import { useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation'
-import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search, Sparkle, NewspaperIcon } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, CircleUser, LogOut, LayoutDashboard, NotebookPen, DollarSign, Moon, Sun, UserCog, Settings, LifeBuoy, ThumbsUp, Sparkles, Search, Sparkle, NewspaperIcon, LucideBook } from 'lucide-react'
 
 import { useTheme } from "next-themes"
 import Link from "next/link"
@@ -55,7 +55,7 @@ export const navLinks = [
   },
   {
     name: "New Page",
-    href: "/dashboard/new-page",
+    href: "/dashboard/bible-page",
     icon: NewspaperIcon,
   },
   // {
@@ -106,7 +106,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
               { icon: Edit3, label: "Journal Entries", path: "/dashboard/journals" },
               { icon: Sparkles, label: "Bible Ai Chat", path: "/dashboard/chat-assistant" },
-              { icon: NewspaperIcon, label: "New Page", path: "/dashboard/new-page" },
+              { icon: LucideBook, label: "Bible", path: "/dashboard/bible-page" },
               // { icon: Edit3, label: "Journal Entries" },
               // { icon: FileText, label: "Notes & Highlights" },
               // { icon: Star, label: "Saved Insights" },
