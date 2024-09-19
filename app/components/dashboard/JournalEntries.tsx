@@ -105,7 +105,6 @@ export default function JournalEntries({ data, tags, userId }) {
 
 
     useEffect(() => {
-        alert(theme);
         setDarkMode(theme !== 'light');
     }, [theme])
 

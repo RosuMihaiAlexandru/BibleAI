@@ -210,7 +210,6 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
             const newElement = document.createElement("p");
             newElement.innerHTML = verseContent;
 
-            alert(verseContent)
             // Set the updated content back to the editor
             editor?.commands.setContent(verseContent);
             // setBody(editor?.getHTML());
