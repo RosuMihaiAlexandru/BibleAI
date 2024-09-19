@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
-import { ChevronLeft, ChevronRight, Edit3, X, Search, Bookmark, Share2, Sun, Moon, Volume2, MessageSquare, Book, Send, MoreHorizontal, MessageSquarePlus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit3, X, Search, Bookmark, Share2, Sun, Moon, Volume2, MessageSquare, Book, Send, MoreHorizontal, MessageSquarePlus, SaveIcon } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -23,6 +23,7 @@ import AddJournalForm from "@/app/components/dashboard/forms/Journal/AddJournalF
 import { Spinner } from "@/app/components/shared/Spinner";
 import AIChat from "./AiChat"
 import AIChatDialog from "./AiChatDialog"
+import { toast } from "sonner"
 
 const MotionButton = motion(Button)
 
@@ -130,7 +131,7 @@ const HighlightedVerse = ({ verse, content, highlight, fontSize, onAddNote, vers
                 {words.map((word, index) => (
                     <span
                         key={index}
-                        className={`mr-4 inline-block cursor-pointer transition-colors duration-200 ${highlight ? highlight.color : ''
+                        className={`mr-4 inline-block cursor-pointer transition-colors duration-200 ${highlight ? highlight : ''
                             } ${(selectionStart !== null && selectionEnd !== null &&
                                 index >= Math.min(selectionStart, selectionEnd) &&
                                 index <= Math.max(selectionStart, selectionEnd))
@@ -229,6 +230,8 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const [lifeContextExplanation, setLifeContextExplanation] = useState('');
     const [loading, setLoading] = useState(false);
     const [explanationType, setExplanationType] = useState('');
+    const [versesData, setVersesData] = useState([]);
+    const [currentHighlight, setCurrentHighlight] = useState('')
     // const chapters = Array.from({ length: 50 }, (_, i) => i + 1)
 
 
@@ -296,6 +299,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     };
 
     const addNote = (verseId: string) => {
+        setCurrentAiChatVerseId(verseId);
         const newNote: Note = {
             id: Date.now().toString(),
             verseId,
@@ -306,16 +310,26 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         setShowNotes(true)
     }
 
-    const updateNote = (id: string, content: string) => {
-        setNotes(notes.map(note => note.id === id ? { ...note, content } : note))
+    const updateNote = async (id: string, content: string, verseId: string) => {
+        setNotes(notes.map(note => note.id === id ? { ...note, content, verseId } : note))
+    }
+
+    const saveNoteToDb = async (id: string, content: string, verseId: string) => {
+        await saveVerseDataAndNotesToDb({ id, content, verseId }, null, null);
     }
 
     const deleteNote = (id: string) => {
         setNotes(notes.filter(note => note.id !== id))
         setActiveNote(null)
+        deleteNoteFromDb(id)
     }
 
-    const toggleHighlight = (verseId: string, color: string) => {
+    const toggleHighlight = async (verseId: string, color: string) => {
+        // setCurrentHighlight(color);
+        // setCurrentAiChatVerseId(verseId);
+        await saveVerseDataAndNotesToDb(null, color, null);
+
+
         setHighlights(prev => {
             const existingHighlight = prev.find(h => h.verseId === verseId)
             if (existingHighlight) {
@@ -351,13 +365,15 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         setIsPlaying(!isPlaying)
     }
 
-    const addBookmark = (verseId: string, content: string) => {
+    const addBookmark = async (verseId: string, content: string) => {
         const newBookmark: Bookmark = {
             id: Date.now().toString(),
             verseId,
             content,
         }
         setBookmarks([...bookmarks, newBookmark])
+        setCurrentAiChatVerseId(verseId);
+        await saveVerseDataAndNotesToDb(null, null, true)
     }
 
     const removeBookmark = (id: string) => {
@@ -413,7 +429,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     }
 
     const openHighlightOptions = (verseId: string) => {
-        setCurrentHighlightVerse(verseId)
+        setCurrentAiChatVerseId(verseId)
         setShowHighlightOptions(true)
     }
 
@@ -426,6 +442,23 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         const selectedWords = words.toLowerCase().split(/\s+/)
         return wordDefinitions.filter(def => selectedWords.includes(def.word.toLowerCase()))
     }
+
+    const getVersesData = (verseIds) => {
+        if (verseIds !== "" && currentChapter)
+            fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible?chapterId=${currentChapter.id}&bookId=9879dbb7cfe39e4d-03&verseIds=${verseIds}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setVersesData([...data.verses] as any);
+                    const newNotes = data.verses.flatMap(verseData => verseData.notes);
+                    if (newNotes.length > 0) setNotes([...notes, ...newNotes]);
+                });
+    }
+
 
     useEffect(() => {
 
@@ -535,10 +568,16 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     }, [currentChapter]);
 
+
     useEffect(() => {
-        // alert(verses.length)
-        // alert(currentChapter?.id)
+
+    }, [versesData])
+
+    useEffect(() => {
+        getVersesData(verses.map(item => item.id).join(','));
     }, [verses])
+
+
 
     const pageX = useMotionValue(0)
     const pageRotate = useTransform(pageX, [-100, 0, 100], [-10, 0, 10])
@@ -607,6 +646,134 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         const data = await response.json();
         setLoading(false);
         setLifeContextExplanation(data.text)
+    }
+
+    const saveVerseDataAndNotesToDb = async (note, highlightColor, bookmark) => {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('userId', userId);
+        formData.append('verseId', currentAiChatVerseId);
+        formData.append('chapterId', currentChapter?.id);
+        formData.append('bookId', '9879dbb7cfe39e4d-03');
+        if (highlightColor) {
+            formData.append('highlightColor', highlightColor);
+        }
+
+        if (bookmark) {
+            formData.append('isBookmarked', bookmark);
+        }
+
+        // const noteArray = notes.map(note => note.content);
+        if (note) formData.append('note', JSON.stringify(note));
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible`, {
+            method: "POST",
+            headers: {
+
+            },
+            body: formData
+        });
+
+
+        const data = await response.json();
+        if (note) {
+            const noteLength = data.verse.notes.length;
+
+            // Check if notes array is not empty
+            if (notes.length > 0 && noteLength > 0) {
+                // Update the ID of the last note
+                notes[notes.length - 1].id = data.verse.notes[noteLength - 1].id;
+
+                // Update the state with the modified notes array
+                setNotes([...notes]);
+            }
+        }
+        if (highlightColor) {
+
+            setVersesData(prevVerses => {
+                const existingVerseIndex = prevVerses.findIndex(v => v.verseId === data.verse.verseId);
+
+                if (existingVerseIndex !== -1) {
+                    // Update the existing verse
+                    const updatedVerses = [...prevVerses] as any;
+                    updatedVerses[existingVerseIndex] = data.verse;
+                    return updatedVerses;
+                } else {
+                    // Add the new verse to the array
+                    return [...prevVerses, data.verse];
+                }
+            });
+            // setVerses([...verses])
+        }
+
+        if (data) {
+            toast.success('Changes have been saved')
+        }
+        setLoading(false);
+    }
+
+
+    const createOrUpdateNote = async (note) => {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('noteId', note.id);
+        formData.append('verseId', note.verseId);
+        formData.append('content', note?.content);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/note/createOrUpdateNote`, {
+            method: "POST",
+            headers: {
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data) {
+            toast.success('Notes have been saved')
+        }
+        setLoading(false);
+    }
+
+    const deleteNoteFromDb = async (id) => {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('noteId', id as string);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/note/createOrUpdateNote`, {
+            method: "DELETE",
+            headers: {
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data) {
+            toast.success('Note has been deleted')
+        }
+        setLoading(false);
+    }
+
+    const createOrUpdateMultipleNotes = async (notes) => {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('notes', JSON.stringify(notes));
+        formData.append('userId', userId);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/note/createOrUpdateMultipleNotes`, {
+            method: "POST",
+            headers: {
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data) {
+            toast.success('Notes have been saved')
+        }
+        setLoading(false);
     }
 
 
@@ -786,7 +953,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                         {verses.map((verse, index) => {
                                             const verseIndex = index + 1;
                                             const verseId = `${currentBook?.id}-${currentChapter?.id}-${verse}`;
-                                            const highlight = highlights.find(h => h.verseId === verseId);
+                                            const highlight = versesData?.find(h => h.verseId === verse.id)?.highlightColor;
                                             return (
                                                 <HighlightedVerse
                                                     key={verse?.id}
@@ -796,7 +963,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                                     fontSize={fontSize}
                                                     onAddNote={addNote}
                                                     verseId={verse.id}
-                                                    onBookmark={addBookmark}
+                                                    onBookmark={() => addBookmark(verse.id, verse.content)}
                                                     onShare={shareVerse}
                                                     onChat={startAIChat}
                                                     onJournal={addToJournal}
@@ -827,6 +994,23 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                             </Button>
                                         </div>
                                         <ScrollArea className="h-[calc(100vh-10rem)]">
+                                            {/* {versesData && versesData.length > 0 && versesData.map((verseData) => verseData.notes.map((note) => (
+                                                <div key={note.id} className="mb-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-sm font-medium">{verseData.verseId}</span>
+                                                        <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
+                                                            <X className="h-4 w-4" />
+                                                            <span className="sr-only">Delete note</span>
+                                                        </Button>
+                                                    </div>
+                                                    <Textarea
+                                                        value={note.content}
+                                                        onChange={(e) => updateNote(note.id, e.target.value, verseData.verseId)}
+                                                        placeholder="Enter your note here..."
+                                                        className="w-full"
+                                                    />
+                                                </div>
+                                            )))} */}
                                             {notes.map((note) => (
                                                 <div key={note.id} className="mb-4">
                                                     <div className="flex justify-between items-center mb-2">
@@ -836,14 +1020,29 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                                             <span className="sr-only">Delete note</span>
                                                         </Button>
                                                     </div>
-                                                    <Textarea
+                                                    <textarea
                                                         value={note.content}
-                                                        onChange={(e) => updateNote(note.id, e.target.value)}
+                                                        onChange={(e) => updateNote(note.id, e.target.value, note.verseId)}
+                                                        onBlur={(e) => saveNoteToDb(note.id, e.target.value, note.verseId)}
+                                                        style={{ minHeight: '100px' }}
+
                                                         placeholder="Enter your note here..."
                                                         className="w-full"
                                                     />
                                                 </div>
                                             ))}
+                                            {/* {notes && notes.length > 0 &&
+                                                <Button variant="ghost" onClick={() => saveVerseDataAndNotesToDb(notes)}>
+                                                    <SaveIcon className="h-4 w-4" />
+                                                    <span className="sr-only">Save notes</span>
+                                                </Button>
+                                            }
+                                            {versesData && versesData.length > 0 &&
+                                                <Button variant="ghost" onClick={() => createOrUpdateMultipleNotes(versesData.flatMap(verseData => verseData.notes.map(note => note)))}>
+                                                    <SaveIcon className="h-4 w-4" />
+                                                    <span className="sr-only">Save notes</span>
+                                                </Button>
+                                            } */}
                                         </ScrollArea>
                                     </div>
                                 </motion.div>
