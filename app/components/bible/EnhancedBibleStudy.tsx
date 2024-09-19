@@ -386,7 +386,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     const shareVerse = (verseId: string, content: string) => {
         setTextToShare(content);
-        setLinkToShare(`${process.env.KINDE_SITE_URL}/bible-page?chapterId=${currentChapter?.id}&verseId=${verseId}`);
+        setLinkToShare(`${process.env.NEXT_PUBLIC_SITE_URL}/bible-page?chapterId=${currentChapter?.id}&verseId=${verseId}`);
         // setLinkToShare(`https://genbibleaiapp.kinde.com`);
         setShowShareDialog(true);
         console.log(`Sharing verse ${verseId}: ${content}`)
