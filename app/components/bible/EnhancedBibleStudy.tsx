@@ -39,7 +39,16 @@ const books = [
     "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
 ]
 
-const translations = ["NIV", "KJV", "ESV", "NLT", "NASB"]
+const translationKeysAndValues = {
+    'engWEBUSOrthodox': '9879dbb7cfe39e4d-03',
+    'spaPdDpt': '48acedcf8595c754-01',
+    'engKJVCPB': '55212e3cf5d04d49-01',
+    'OYBC2022': 'b6e21a7696dccae7-01',
+    'turytc': '085defac6e17b9eb-01',
+    'srp1865': '06995ce9cd23361b-01'
+};
+
+const translationsValues = ["engWEBUSOrthodox", "spaPdDpt", "engKJVCPB", "OYBC2022", "turytc", "srp1865"]
 
 const highlightColors = [
     { name: "Green", value: "bg-green-300" },
@@ -192,10 +201,10 @@ const HighlightedVerse = ({ verse, content, highlight, fontSize, onAddNote, vers
 export default function EnhancedBibleStudy({ tags, userId }) {
     const [currentBook, setCurrentBook] = useState(null)
     const [currentChapter, setCurrentChapter] = useState(null)
-    const [currentTranslation, setCurrentTranslation] = useState("NIV")
+    const [currentTranslation, setCurrentTranslation] = useState("engWEBUSOrthodox")
     const [books, setBooks] = useState([]);
     const [chapters, setChapters] = useState([])
-    const [translations, setTranslations] = useState([]);
+    const [translations, setTranslations] = useState(translationsValues);
     const [notes, setNotes] = useState<Note[]>([])
     const [activeNote, setActiveNote] = useState<string | null>(null)
     const [showNotes, setShowNotes] = useState(true)
@@ -445,7 +454,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     const getVersesData = (verseIds) => {
         if (verseIds !== "" && currentChapter)
-            fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible?chapterId=${currentChapter.id}&bookId=9879dbb7cfe39e4d-03&verseIds=${verseIds}`, {
+            fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible?chapterId=${currentChapter.id}&bookId=${translationKeysAndValues[currentTranslation]}&verseIds=${verseIds}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -455,14 +464,30 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                 .then((data) => {
                     setVersesData([...data.verses] as any);
                     const newNotes = data.verses.flatMap(verseData => verseData.notes);
-                    if (newNotes.length > 0) setNotes([...notes, ...newNotes]);
+                    if (newNotes.length > 0) setNotes((prevNotes) => {
+                        // Combine the existing notes and the new notes
+                        const combinedNotes = [...prevNotes, ...newNotes];
+
+                        // Remove duplicates based on a unique property, such as "id"
+                        const uniqueNotes = combinedNotes.filter(
+                            (note, index, self) =>
+                                index === self.findIndex((n) => n.id === note.id) // Assuming "id" is the unique property
+                        );
+
+                        return uniqueNotes;
+                    });
+
+
+                    else {
+                        setNotes(newNotes);
+                    }
                 });
     }
 
 
     useEffect(() => {
 
-        fetch("https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/books", {
+        fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -492,7 +517,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         const verseId = searchParams.get('verseId');
         if (verseId) {
             fetch(
-                `https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/verses/${verseId}?include-chapter-numbers=false&include-verse-numbers=false`,
+                `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/verses/${verseId}?include-chapter-numbers=false&include-verse-numbers=false`,
                 {
                     method: "GET",
                     headers: {
@@ -510,8 +535,28 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     }, [])
 
     useEffect(() => {
+        if (currentTranslation) {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-key": `${process.env.NEXT_PUBLIC_BIBLE_API_KEY}`,
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setBooks(data.data)
+                    if (data.data.length > 0) {
+                        setCurrentBook(data.data[0])
+                    }
+                });
+        }
+
+    }, [currentTranslation])
+
+    useEffect(() => {
         if (currentBook) {
-            fetch(`https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/books/${currentBook.id}/chapters`, {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books/${currentBook.id}/chapters`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -531,7 +576,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     useEffect(() => {
         let verses = [] as any;
         if (currentChapter) {
-            fetch(`https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/chapters/${currentChapter.id}/verses`, {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/chapters/${currentChapter.id}/verses`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -543,7 +588,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                     // Create an array of promises for fetching verse content
                     const versePromises = versesWithoutContent.data.map((verse) =>
                         fetch(
-                            `https://api.scripture.api.bible/v1/bibles/9879dbb7cfe39e4d-03/verses/${verse.id}?include-chapter-numbers=false&include-verse-numbers=false`,
+                            `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/verses/${verse.id}?include-chapter-numbers=false&include-verse-numbers=false`,
                             {
                                 method: "GET",
                                 headers: {
@@ -655,7 +700,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         formData.append('userId', userId);
         formData.append('verseId', currentAiChatVerseId);
         formData.append('chapterId', currentChapter?.id);
-        formData.append('bookId', '9879dbb7cfe39e4d-03');
+        formData.append('bookId', translationKeysAndValues[currentTranslation]);
         if (highlightColor) {
             formData.append('highlightColor', highlightColor);
         }

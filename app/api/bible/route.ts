@@ -149,34 +149,30 @@ export async function GET(req: Request) {
     const verseIdsParam = searchParams.get("verseIds") || ""; // Get comma-separated verseIds
     const bookId = searchParams.get("bookId") || "";
 
-    console.log(bookId);
-    console.log(chapterId);
-    console.log(verseIdsParam);
     // Parse verseIds into an array
-    let verseIds = [] as any;
+    let verseIds: string[] = [];
 
-    if (Array.isArray(verseIdsParam)) {
-      // If verseIdsParam is already an array, use it directly
+    if (verseIdsParam) {
       verseIds = verseIdsParam
         .split(",")
         .map((id) => id.trim())
         .filter((id) => id);
-    } else if (typeof verseIdsParam === "string") {
-      verseIds.push(verseIdsParam);
     }
 
-    const many = await prisma.verse.findMany({});
-    console.log(many.length);
+    // Construct Prisma query object based on available query parameters
+    const whereClause: any = {};
+    if (chapterId) whereClause.chapterId = chapterId;
+    if (bookId) whereClause.bookId = bookId;
+    if (verseIdsParam) whereClause.verseId = verseIdsParam; // Assuming verseIds are the IDs of the verses
 
-    // Query Prisma to find verses
-    let dbVerses: any;
-    if (verseIds.length > 0) {
-      dbVerses = await prisma.verse.findMany({
-        include: { notes: true }, // Include notes in the response
-      });
-    } else {
-      dbVerses = []; // No verseIds provided, return empty array
-    }
+    console.log(bookId);
+    console.log(chapterId);
+    console.log(verseIdsParam);
+    // Query Prisma to find verses with the specified filters
+    const dbVerses = await prisma.verse.findMany({
+      where: whereClause,
+      include: { notes: true }, // Include notes in the response
+    });
 
     // Return the result based on whether verses were found
     if (dbVerses.length > 0) {
