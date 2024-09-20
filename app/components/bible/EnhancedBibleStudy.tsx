@@ -24,6 +24,7 @@ import { Spinner } from "@/app/components/shared/Spinner";
 import AIChat from "./AiChat"
 import AIChatDialog from "./AiChatDialog"
 import { toast } from "sonner"
+import { useTheme } from "next-themes"
 
 const MotionButton = motion(Button)
 
@@ -40,12 +41,16 @@ const books = [
 ]
 
 const translationKeysAndValues = {
-    'engWEBUSOrthodox': '9879dbb7cfe39e4d-03',
-    'spaPdDpt': '48acedcf8595c754-01',
-    'engKJVCPB': '55212e3cf5d04d49-01',
-    'OYBC2022': 'b6e21a7696dccae7-01',
-    'turytc': '085defac6e17b9eb-01',
-    'srp1865': '06995ce9cd23361b-01'
+    'engWEBUSOrthodox': {
+        value: '9879dbb7cfe39e4d-03', description: 'World English Bible, American English Edition (Orthodox)'
+    },
+    'spaPdDpt': { value: '48acedcf8595c754-01', description: 'Spanish Bible, Palabla de Dios para ti' },
+    'engKJVCPB': { value: '55212e3cf5d04d49-01', description: 'Cambridge Paragraph Bible of the KJV' },
+    'OYBC2022': { value: 'b6e21a7696dccae7-01', description: 'Orthodox Yiddish Brit Chadasha New Testament' },
+    'turytc': { value: '085defac6e17b9eb-01', description: 'New Turkish Bible Translation (YTC)' },
+    'srp1865': {
+        value: '06995ce9cd23361b-01', description: 'Serbian Bible - common'
+    }
 };
 
 const translationsValues = ["engWEBUSOrthodox", "spaPdDpt", "engKJVCPB", "OYBC2022", "turytc", "srp1865"]
@@ -104,12 +109,11 @@ const wordDefinitions: WordDefinition[] = [
     },
 ]
 
-const HighlightedVerse = ({ verse, content, highlight, fontSize, onAddNote, verseId, onBookmark, onShare, onChat, onJournal, onHighlight, onWordSelect }) => {
+const HighlightedVerse = ({ verse, content, highlight, fontSize, onAddNote, verseId, onBookmark, onShare, onChat, onJournal, onHighlight, onWordSelect, theme }) => {
     const words = content.split(/\s+/);
     const [selectionStart, setSelectionStart] = useState<number | null>(null);
     const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
     const [isSelecting, setIsSelecting] = useState(false);
-
     const handleMouseDown = (index: number) => {
         setSelectionStart(index);
         setSelectionEnd(index);
@@ -140,7 +144,7 @@ const HighlightedVerse = ({ verse, content, highlight, fontSize, onAddNote, vers
                 {words.map((word, index) => (
                     <span
                         key={index}
-                        className={`mr-4 inline-block cursor-pointer transition-colors duration-200 ${highlight ? highlight : ''
+                        className={`mr-4 inline-block cursor-pointer transition-colors duration-200 text-${theme === 'dark' && highlight ? 'black' : highlight ? 'white' : 'black'} ${highlight ? highlight : ''
                             } ${(selectionStart !== null && selectionEnd !== null &&
                                 index >= Math.min(selectionStart, selectionEnd) &&
                                 index <= Math.max(selectionStart, selectionEnd))
@@ -242,7 +246,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const [versesData, setVersesData] = useState([]);
     const [currentHighlight, setCurrentHighlight] = useState('')
     // const chapters = Array.from({ length: 50 }, (_, i) => i + 1)
-
+    const { theme } = useTheme();
 
     const handleNewEntry = () => {
         setIsNewEntryModalOpen(true)
@@ -454,7 +458,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     const getVersesData = (verseIds) => {
         if (verseIds !== "" && currentChapter)
-            fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible?chapterId=${currentChapter.id}&bookId=${translationKeysAndValues[currentTranslation]}&verseIds=${verseIds}`, {
+            fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/bible?chapterId=${currentChapter.id}&bookId=${translationKeysAndValues[currentTranslation].value}&verseIds=${verseIds}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -487,7 +491,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     useEffect(() => {
 
-        fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books`, {
+        fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/books`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -517,7 +521,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         const verseId = searchParams.get('verseId');
         if (verseId) {
             fetch(
-                `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/verses/${verseId}?include-chapter-numbers=false&include-verse-numbers=false`,
+                `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/verses/${verseId}?include-chapter-numbers=false&include-verse-numbers=false`,
                 {
                     method: "GET",
                     headers: {
@@ -536,7 +540,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     useEffect(() => {
         if (currentTranslation) {
-            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books`, {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/books`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -556,7 +560,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
     useEffect(() => {
         if (currentBook) {
-            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/books/${currentBook.id}/chapters`, {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/books/${currentBook.id}/chapters`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -576,7 +580,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     useEffect(() => {
         let verses = [] as any;
         if (currentChapter) {
-            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/chapters/${currentChapter.id}/verses`, {
+            fetch(`https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/chapters/${currentChapter.id}/verses`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -588,7 +592,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                     // Create an array of promises for fetching verse content
                     const versePromises = versesWithoutContent.data.map((verse) =>
                         fetch(
-                            `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation]}/verses/${verse.id}?include-chapter-numbers=false&include-verse-numbers=false`,
+                            `https://api.scripture.api.bible/v1/bibles/${translationKeysAndValues[currentTranslation].value}/verses/${verse.id}?include-chapter-numbers=false&include-verse-numbers=false`,
                             {
                                 method: "GET",
                                 headers: {
@@ -703,7 +707,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         formData.append('userId', userId);
         formData.append('verseId', currentAiChatVerseId);
         formData.append('chapterId', currentChapter?.id);
-        formData.append('bookId', translationKeysAndValues[currentTranslation]);
+        formData.append('bookId', translationKeysAndValues[currentTranslation].value);
         if (highlightColor || highlightColor === "") {
             formData.append('highlightColor', highlightColor);
         }
@@ -895,8 +899,18 @@ export default function EnhancedBibleStudy({ tags, userId }) {
 
                     <header className="flex items-center justify-between p-2 border-b">
                         <div className="flex items-center">
+                            <Select value={currentTranslation} onValueChange={setCurrentTranslation}>
+                                <SelectTrigger className={`w-[250px] mr-2 text-${theme === 'light' ? 'black' : 'white'}`}>
+                                    <SelectValue placeholder="Translation" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {translations.map(translation => (
+                                        <SelectItem key={translation} value={translation}>{translationKeysAndValues[translation].description}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <Select value={currentBook} onValueChange={setCurrentBook}>
-                                <SelectTrigger className="w-[200px] mr-2">
+                                <SelectTrigger className={`w-[200px] mr-2 text-${theme === 'light' ? 'black' : 'white'}`}>
                                     <SelectValue placeholder="Select book" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -906,22 +920,12 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                 </SelectContent>
                             </Select>
                             <Select value={currentChapter} onValueChange={setCurrentChapter}>
-                                <SelectTrigger className="w-[200px] mr-2">
+                                <SelectTrigger className={`w-[190px] mr-2 text-${theme === 'light' ? 'black' : 'white'}`}>
                                     <SelectValue placeholder="Chapter" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {chapters.map(chapter => (
                                         <SelectItem key={chapter?.id} value={chapter}>{chapter?.id}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={currentTranslation} onValueChange={setCurrentTranslation}>
-                                <SelectTrigger className="w-[150px]">
-                                    <SelectValue placeholder="Translation" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {translations.map(translation => (
-                                        <SelectItem key={translation} value={translation}>{translation}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -1017,6 +1021,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                                     onJournal={addToJournal}
                                                     onHighlight={openHighlightOptions}
                                                     onWordSelect={handleWordSelect}
+                                                    theme={theme}
                                                 />
                                             );
                                         })}
@@ -1075,7 +1080,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                                         style={{ minHeight: '100px' }}
 
                                                         placeholder="Enter your note here..."
-                                                        className="w-full"
+                                                        className={`w-full text-${theme === 'light' ? 'black' : 'white'}`}
                                                     />
                                                 </div>
                                             ))}
