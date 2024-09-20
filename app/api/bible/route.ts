@@ -24,20 +24,6 @@ export async function POST(req: Request) {
     // Get the single note content
     const note = formData.get("note") ? JSON.parse(formData.get("note")) : null;
 
-    // Validate that note has content
-    // if (!note || !note.content) {
-    //   return NextResponse.json({
-    //     status: "fail",
-    //     error: "No note content provided",
-    //   });
-    // }
-
-    // // Delete all notes
-    // await prisma.note.deleteMany({});
-
-    // // Delete all verses
-    // await prisma.verse.deleteMany({});
-
     // Check if the verse already exists
     let dbVerse = await prisma.verse.findUnique({
       where: {
