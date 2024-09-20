@@ -636,17 +636,20 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     ];
 
     const getTextContentFromParagraph = (verseParagraph: string) => {
-        // Use regex to extract the content of <p> tags
-        const regex = /<p[^>]*>(.*?)<\/p>/g;  // Matches content inside <p> tags
-        let match;
+        // Create a DOM parser to handle the HTML string
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(verseParagraph, 'text/html');
+
+        // Get the text content of <p> tags and their children (including <span> elements)
+        const paragraphs = doc.querySelectorAll('p');
         let extractedText = '';
 
-        // Extract all <p> content
-        while ((match = regex.exec(verseParagraph)) !== null) {
-            extractedText += match[1] + ' '; // Append the content inside the <p> tag
-        }
+        // Iterate over each <p> element and extract its text content, including <span> elements
+        paragraphs.forEach((p) => {
+            extractedText += p.textContent + ' ';
+        });
 
-        return extractedText
+        return extractedText.trim(); // Remove trailing space
     }
 
     const handleEntryTypeSelect = (type) => {
@@ -701,7 +704,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         formData.append('verseId', currentAiChatVerseId);
         formData.append('chapterId', currentChapter?.id);
         formData.append('bookId', translationKeysAndValues[currentTranslation]);
-        if (highlightColor) {
+        if (highlightColor || highlightColor === "") {
             formData.append('highlightColor', highlightColor);
         }
 
@@ -847,7 +850,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                     </div> */}
                 </motion.div>) :
 
-                <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'} transition-colors duration-300`}>
+                <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'} overflow-auto transition-colors duration-300 overflow-auto`}>
                     <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
@@ -1177,7 +1180,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                             </div>
                             <Button
                                 variant="outline"
-                                onClick={() => toggleHighlight(currentHighlightVerse, '')}
+                                onClick={() => toggleHighlight(currentHighlightVerse, 'no-color')}
                                 className="mt-4"
                             >
                                 Remove Highlight

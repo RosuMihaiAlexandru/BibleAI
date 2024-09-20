@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     const highlightColor = formData.get("highlightColor")
       ? (formData.get("highlightColor") as string)
       : null;
+
+    console.log(highlightColor + "highlightColor");
     const isBookmarkedBoolean = formData.get("isBookmarked")
       ? (formData.get("isBookmarked") as string) === "true"
       : false;
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
           id: dbVerse.id, // Use the primary key to update the existing record
         },
         data: {
-          highlightColor: highlightColor,
+          highlightColor: highlightColor !== "no-color" ? highlightColor : "",
         },
         include: { notes: true }, // Include notes in the response
       });
