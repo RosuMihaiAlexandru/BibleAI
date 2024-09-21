@@ -334,7 +334,13 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const deleteNote = (id: string) => {
         setNotes(notes.filter(note => note.id !== id))
         setActiveNote(null)
-        deleteNoteFromDb(id)
+        if (!isNumericId(id)) {
+            deleteNoteFromDb(id)
+        }
+    }
+
+    const isNumericId = (id) => {
+        return /^\d+$/.test(id);
     }
 
     const toggleHighlight = async (verseId: string, color: string) => {
