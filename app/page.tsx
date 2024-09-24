@@ -1,4 +1,3 @@
-"use client"
 
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { Hero } from "./components/frontend/Hero";
