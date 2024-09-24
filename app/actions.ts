@@ -27,20 +27,18 @@ export async function CreateJournalAction(prevState: any, formData: FormData) {
       userId: user.id,
       tagId: submission.value.tagId,
       entryType: submission.value.entryType,
-      
     },
   });
 
-   const journal = await prisma.journal.findUnique({
-        where: {
-            id: data.id,
-        },
-        include: {
-            user: true,
-            tag: true
-        },
-    });
-
+  const journal = await prisma.journal.findUnique({
+    where: {
+      id: data.id,
+    },
+    include: {
+      user: true,
+      tag: true,
+    },
+  });
 
   return journal;
 }
@@ -68,7 +66,7 @@ export async function EditJournalActions(prevState: any, formData: FormData) {
       // image: submission.value.coverImage,
       userId: user.id,
       tagId: submission.value.tagId,
-      entryType: submission.value.entryType
+      entryType: submission.value.entryType,
     },
   });
 
@@ -87,8 +85,6 @@ export async function DeleteJournal(formData: FormData) {
 
   return redirect(`/dashboard`);
 }
-
-
 
 export async function CreateSubscription() {
   const user = await requireUser();

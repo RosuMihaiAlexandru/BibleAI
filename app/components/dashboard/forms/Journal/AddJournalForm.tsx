@@ -163,6 +163,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
 
     useEffect(() => {
         setIsModalOpen(false);
+        if (verseContent) setBody(verseContent);
     }, [])
 
     useEffect(() => {
@@ -275,7 +276,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                         variant="secondary"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
-                                        // onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
+                                    // onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
                                     >
                                         Submit
                                     </MotionButton>
