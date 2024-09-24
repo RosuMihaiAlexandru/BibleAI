@@ -16,9 +16,14 @@ const nextConfig = {
     if (!isServer) {
       // Ensure that all imports of 'yjs' resolve to the same instance
       config.resolve.alias["yjs"] = path.resolve(
-        __dirname,
-        "../../node_modules/yjs"
+        process.cwd(),
+        "node_modules/yjs"
       );
+
+      config.node = {
+        __dirname: false,
+        __filename: false,
+      };
     }
     config.module.rules.push({
       test: /\.svg$/,

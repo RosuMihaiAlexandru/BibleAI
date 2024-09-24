@@ -1,8 +1,18 @@
+// Assuming these are your imports and existing code
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { mergeAttributes, Range } from '@tiptap/core'
+import { NodeViewProps } from '@tiptap/core'
+import { Node as ProseMirrorNode } from 'prosemirror-model'
 
 import { ImageBlockView } from './components/ImageBlockView'
 import { Image } from '../Image'
+
+// Define the ImageBlockViewProps interface properly
+interface ImageBlockViewProps extends NodeViewProps {
+  node: ProseMirrorNode & {
+    attrs: { src: string, width: string, align: string, alt?: string }
+  };
+}
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -96,7 +106,8 @@ export const ImageBlock = Image.extend({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ImageBlockView)
+    // Ensure your ImageBlockView component expects the correct type
+    return ReactNodeViewRenderer(ImageBlockView as (props: ImageBlockViewProps) => JSX.Element)
   },
 })
 

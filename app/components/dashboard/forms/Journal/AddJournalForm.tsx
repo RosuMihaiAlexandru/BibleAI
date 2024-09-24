@@ -1,18 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Bold from "@tiptap/extension-bold";
-import Image from '@tiptap/extension-image';
-import Italic from "@tiptap/extension-italic";
-import Strike from "@tiptap/extension-strike";
-import Heading from "@tiptap/extension-heading";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import CodeBlock from "@tiptap/extension-code-block";
-import Blockquote from "@tiptap/extension-blockquote";
-import TextAlign from "@tiptap/extension-text-align";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,37 +12,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { SubmitButton } from "@/app/components/dashboard/SubmitButtons";
-import {
-    Bold as BoldIcon,
-    Italic as ItalicIcon,
-    Strikethrough as StrikeIcon,
-    Heading1,
-    Heading2,
-    List,
-    ListOrdered,
-    Code,
-    Quote,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    ImageIcon,
-    WandSparklesIcon,
-    Wand2Icon,
-    LoaderIcon,
-    LucideWand2,
-    LucideCloudLightning,
-} from "lucide-react";
 import './AddJournalForm.css';
 import { CreateJournalAction } from "@/app/actions";
-import { cn } from "@/lib/utils";
 import { useForm } from "@conform-to/react";
 import { JournalSchema } from "@/app/utils/zodSchemas";
 import { parseWithZod } from "@conform-to/zod";
 import { useTheme } from "next-themes";
-import prisma from "@/app/utils/db";
-import { redirect } from "next/navigation";
 import { useFormState } from "react-dom";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -62,12 +25,9 @@ import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/app/components/shared/Spinner";
-import CustomUploadButton from "@/app/components/shared/CustomUploadButton";
 import RootEditor from "@/app/components/editor/RootEditor";
 import useStore from "@/app/zustand/useStore";
 const MotionButton = motion(Button);
@@ -315,7 +275,7 @@ export default function AddJournalForm({ data, setIsEditorOpen, selectedEntryTyp
                                         variant="secondary"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
-                                        onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
+                                        // onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
                                     >
                                         Submit
                                     </MotionButton>

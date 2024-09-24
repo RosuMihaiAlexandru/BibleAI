@@ -22,3 +22,13 @@ export const JournalSchema = z.object({
   entryType: z.string().min(1),
 });
 
+export const PostSchema = z.object({
+
+  slug: z.string().min(1),
+  title: z.string().min(1).max(100),
+  smallDescription: z.string().min(1),
+  articleContent: z.string().min(1),
+  id: z.string().min(1),
+  image: z.string().min(1),
+});
+

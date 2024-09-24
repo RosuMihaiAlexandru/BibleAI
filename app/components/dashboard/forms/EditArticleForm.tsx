@@ -22,7 +22,7 @@ import { JSONContent } from "novel";
 import { useForm } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod";
 import { PostSchema } from "@/app/utils/zodSchemas";
-import { CreatePostAction, EditPostActions } from "@/app/actions";
+// import { EditPostActions } from "@/app/actions";
 import slugify from "react-slugify";
 
 interface iAppProps {
@@ -45,9 +45,9 @@ export function EditArticleForm({ data, siteId }: iAppProps) {
   const [slug, setSlugValue] = useState<undefined | string>(data.slug);
   const [title, setTitle] = useState<undefined | string>(data.title);
 
-  const [lastResult, action] = useActionState(EditPostActions, undefined);
+  // const [lastResult, action] = useActionState(EditPostActions, undefined);
   const [form, fields] = useForm({
-    lastResult,
+    // lastResult,
 
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: PostSchema });
@@ -81,7 +81,7 @@ export function EditArticleForm({ data, siteId }: iAppProps) {
           className="flex flex-col gap-6"
           id={form.id}
           onSubmit={form.onSubmit}
-          action={action}
+          // action={action}
         >
           <input type="hidden" name="articleId" value={data.id} />
           <input type="hidden" name="siteId" value={siteId} />
@@ -137,9 +137,9 @@ export function EditArticleForm({ data, siteId }: iAppProps) {
             <Label>Cover Image</Label>
             <input
               type="hidden"
-              name={fields.coverImage.name}
-              key={fields.coverImage.key}
-              defaultValue={fields.coverImage.initialValue}
+              name={fields.image.name}
+              key={fields.image.key}
+              defaultValue={fields.image.initialValue}
               value={imageUrl}
             />
             {imageUrl ? (
@@ -163,7 +163,7 @@ export function EditArticleForm({ data, siteId }: iAppProps) {
               />
             )}
 
-            <p className="text-red-500 text-sm">{fields.coverImage.errors}</p>
+            <p className="text-red-500 text-sm">{fields.image.errors}</p>
           </div>
 
           <div className="grid gap-2">

@@ -1,50 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { useeditor, editorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Bold from "@tiptap/extension-bold";
-import Italic from "@tiptap/extension-italic";
-import Strike from "@tiptap/extension-strike";
-import Image from '@tiptap/extension-image';
-import Heading from "@tiptap/extension-heading";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import CodeBlock from "@tiptap/extension-code-block";
-import Blockquote from "@tiptap/extension-blockquote";
-import TextAlign from "@tiptap/extension-text-align";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SubmitButton } from "../../SubmitButtons";
-import { CreateJournalAction, EditJournalActions } from "@/app/actions";
+import { EditJournalActions } from "@/app/actions";
 import { useForm } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod";
 import { JournalSchema } from "@/app/utils/zodSchemas";
-import slugify from "react-slugify";
-import {
-    Bold as BoldIcon,
-    Italic as ItalicIcon,
-    Strikethrough as StrikeIcon,
-    Heading1,
-    Heading2,
-    List,
-    ListOrdered,
-    Code,
-    Quote,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    WandSparklesIcon,
-    LucideCloudLightning,
-    TextSelection,
-    ImageIcon,
-} from "lucide-react";
 import { toast } from "sonner";
 import { useFormState } from "react-dom";
 import './AddJournalForm.css'
-import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import {
     Select,
@@ -55,18 +22,8 @@ import {
 } from "@/components/ui/select"
 
 import BibleSearchModal from "@/app/components/chatAi/BibleSearchDialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Spinner } from "@/app/components/shared/Spinner";
 const MotionButton = motion(Button);
 import { motion } from "framer-motion";
-import { UploadButton } from "@/app/utils/UploadthingComponents";
-import CustomUploadButton from "@/app/components/shared/CustomUploadButton";
 import useStore from "@/app/zustand/useStore";
 import RootEditor from "@/app/components/editor/RootEditor";
 
@@ -85,18 +42,11 @@ export function EditJournalForm({ data, tags, userId }) {
     const [title, setTitle] = useState<string>(data.title);
     const [tagId, setTagId] = useState(data.tagId);
     const [entryType, setEntryType] = useState(data.entryType);
-    const { theme } = useTheme();
-    const [iseditorReady, setIseditorReady] = useState(false); // State to track editor? readiness
     const [errors, setErrors] = useState({} as any);
 
     const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
     const [searchResults, setSearchResults] = useState([]); // State to store Bible search
-    const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
-    const [generationType, setGenerationType] = useState("");
     const [generateDescription, setGenerateDescription] = useState("")
-    const [isGenerationLoading, setIsGenerationLoading] = useState(false);
-    const [uploadedFileName, setUploadedFileName] = useState("");
-    const uploadInputRef = useRef<any>();
     const [editor, setEditor] = useState(null);
 
     const { body, setBody, searchQuery, setSearchQuery } = useStore() // State for TipTap content
@@ -112,17 +62,10 @@ export function EditJournalForm({ data, tags, userId }) {
     const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setTriggeringElement(event.currentTarget); // Store the clicked button reference
     };
-    // setBody(data.body);
-
-    // useEffect(() => {
-    //     if (editor)
-    //         setBody(data.body);
-    // }, [data.body, editor])
 
     useEffect(() => {
         setIsModalOpen(false);
     }, [])
-
 
     useEffect(() => {
         if (searchQuery && searchQuery !== "") {
@@ -184,49 +127,9 @@ export function EditJournalForm({ data, tags, userId }) {
         },
     });
 
-
-
-    const uploadFileFromUrl = async (url) => {
-        setIsGenerationLoading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', process.env.NEXT_PUBLIC_UPLOAD_PRESET);
-
-        try {
-            const response = await fetch(process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_URL, {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            const imageNode = {
-                type: 'image',
-                attrs: {
-                    src: data.secure_url,
-                    alt: data.secure_url, // You can customize this
-                },
-            };
-
-            // Insert the image and an empty row
-            editor ?
-                .chain()
-                    .focus()
-                    .insertContent(imageNode) // Insert an empty paragraph (empty row)
-                    .run();
-            // Save Cloudinary image URL
-            setIsGenerationLoading(false);
-        } catch (error) {
-            // setUploadError('Failed to upload image');
-            setIsGenerationLoading(false);
-        }
-    }
-
-
     const tagChanged = (value) => {
         setTagId(value);
     };
-
 
     const entryTypeChanged = (value) => {
         setEntryType(value);
@@ -257,24 +160,13 @@ export function EditJournalForm({ data, tags, userId }) {
         }
     };
 
-    // if (!editor) return null; // Don't render if editor? is not ready
-
-    // Function to handle AI Image generation and insert it into the editor?
-
-    const handleGenerateDescriptionChange = (e) => {
-        setGenerateDescription(e.target.value);
-    }
-
     const setRootEditor = (newEditor) => {
         if (!editor) {
             setEditor(newEditor);
-            // editor?.commands.setContent(data.body);
-            // setBody(data.body);
             console.log(newEditor);
             console.log(editor?.getHTML())
         }
     }
-
 
     return (
         <>
@@ -354,32 +246,6 @@ export function EditJournalForm({ data, tags, userId }) {
                                     </p>)
                                 })}
                         </div>
-
-                        {/* <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
-                            <DialogContent className="flex flex-col">
-                                <DialogHeader>
-                                    <DialogTitle>Generation Text</DialogTitle>
-                                </DialogHeader>
-
-                                <div className="flex flex-col justify-center items-start gap-5">
-                                    <Input
-                                        onChange={handleGenerateDescriptionChange}
-                                        name="generateContent"
-                                        value={generateDescription}
-                                        placeholder={generationType === "image" ? "Describe the image that you want to generate" : "Describe the text that you want to generate"}
-                                    />
-                                    <MotionButton
-
-                                        variant="secondary"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => generationType === "image" ? generateImage(generateDescription) : generateText(generateDescription)}
-                                    >
-                                        Submit
-                                    </MotionButton>
-                                </div>
-                            </DialogContent>
-                        </Dialog> */}
 
                         <MotionButton style={{ width: '200px' }} className="w-100" data-action="submit" onClick={handleButtonClick} >Update Journal Entry</MotionButton>
                     </form>

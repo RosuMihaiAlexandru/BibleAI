@@ -7,6 +7,11 @@ import EmojiList from './components/EmojiList'
 import { KeyboardEvent, RefAttributes } from 'react'
 import { EmojiListProps } from './types'
 
+// Define a type that extends both SuggestionKeyDownProps and EmojiListProps
+type CombinedProps = EmojiListProps & RefAttributes<{
+  onKeyDown: (evt: SuggestionKeyDownProps) => boolean;
+}>;
+
 export const emojiSuggestion = {
   items: ({ editor, query }: { editor: Editor; query: string }) =>
     editor.storage.emoji.emojis
@@ -22,7 +27,7 @@ export const emojiSuggestion = {
   render: () => {
     let component: ReactRenderer<
       { onKeyDown: (evt: SuggestionKeyDownProps) => boolean },
-      EmojiListProps & RefAttributes<SuggestionKeyDownProps>
+      CombinedProps
     >
     let popup: ReturnType<typeof tippy>
 
@@ -71,4 +76,4 @@ export const emojiSuggestion = {
   },
 }
 
-export default emojiSuggestion
+export default emojiSuggestion;

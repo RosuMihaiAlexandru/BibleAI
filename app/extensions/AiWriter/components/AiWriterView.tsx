@@ -4,8 +4,7 @@ import { toast } from "sonner"
 import { v4 as uuid } from 'uuid'
 import deepEql from 'fast-deep-equal'
 
-import { Button } from '@/components/ui/Button'
-import { Loader } from '@/components/ui/Loader'
+import { Button } from '@/components/ui/Button/Button'
 import { Panel, PanelHeadline } from '@/components/ui/Panel'
 import { Textarea } from '../../../components/ui/Textarea'
 import { Icon } from '@/components/ui/Icon'

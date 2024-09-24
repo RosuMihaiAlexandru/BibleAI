@@ -27,6 +27,6 @@ export default async function NewJournalRoute() {
     const tags = await getTags();
 
     return (
-        <AddJournalForm data={tags} selectedEntryType={"Greetings"} userId={user.id} setIsEditorOpen={null}></AddJournalForm>
+        <AddJournalForm data={tags} selectedEntryType={"Greetings"} userId={user.id} setIsEditorOpen={null} addNewToJournalEntries={""} verseContent={""}></AddJournalForm>
     );
 }

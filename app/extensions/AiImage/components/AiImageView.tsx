@@ -6,10 +6,10 @@ import { ImageOptions } from '@tiptap-pro/extension-ai'
 
 import * as Dropdown from '@radix-ui/react-dropdown-menu'
 
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button/Button'
 import { Loader } from '@/components/ui/Loader'
 import { Panel, PanelHeadline } from '@/components/ui/Panel'
-import { Textarea } from '@/components/ui/Textarea'
+import { Textarea } from '@/components/ui/Textarea/Textarea'
 import { Icon } from '@/components/ui/Icon'
 import { Surface } from '@/components/ui/Surface'
 import { DropdownButton } from '@/components/ui/Dropdown'

@@ -1,27 +1,20 @@
 "use client"
-
 import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
-import { ChevronLeft, ChevronRight, Edit3, X, Search, Bookmark, Share2, Sun, Moon, Volume2, MessageSquare, Book, Send, MoreHorizontal, MessageSquarePlus, SaveIcon } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
+import { ChevronLeft, ChevronRight, Edit3, X, Search, Bookmark, Share2, Sun, Moon, Volume2, MessageSquare, Book, MoreHorizontal } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Slider } from "@/components/ui/slider"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShareSocial } from 'react-share-social'
+import { TooltipContent, TooltipProvider, Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
 import ShareComponent from "@/app/components/shared/ShareComponent"
-import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import AddJournalForm from "@/app/components/dashboard/forms/Journal/AddJournalForm";
 import { Spinner } from "@/app/components/shared/Spinner";
-import AIChat from "./AiChat"
 import AIChatDialog from "./AiChatDialog"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
@@ -224,7 +217,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const [aiChatMessages, setAiChatMessages] = useState<{ role: string, content: string }[]>([])
     const [currentAiChatVerse, setCurrentAiChatVerse] = useState("")
     const [currentAiChatVerseId, setCurrentAiChatVerseId] = useState('');
-    const [aiChatInput, setAiChatInput] = useState("")
     const [showHighlightOptions, setShowHighlightOptions] = useState(false)
     const [currentHighlightVerse, setCurrentHighlightVerse] = useState("")
     const [selectedWords, setSelectedWords] = useState<string | null>(null)
@@ -235,7 +227,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const [showShareDialog, setShowShareDialog] = useState(false);
     const [textToShare, setTextToShare] = useState('');
     const [linkToShare, setLinkToShare] = useState('');
-    const router = useRouter();
     const [isNewEntryModalOpen, setIsNewEntryModalOpen] = useState(false)
     const [selectedEntryType, setSelectedEntryType] = useState('')
     const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -244,8 +235,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const [loading, setLoading] = useState(false);
     const [explanationType, setExplanationType] = useState('');
     const [versesData, setVersesData] = useState([]);
-    const [currentHighlight, setCurrentHighlight] = useState('')
-    // const chapters = Array.from({ length: 50 }, (_, i) => i + 1)
     const { theme } = useTheme();
 
     const handleNewEntry = () => {
@@ -344,8 +333,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     }
 
     const toggleHighlight = async (verseId: string, color: string) => {
-        // setCurrentHighlight(color);
-        // setCurrentAiChatVerseId(verseId);
         await saveVerseDataAndNotesToDb(null, color, null);
 
 
@@ -402,13 +389,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const addToJournal = (verseId: string, content: string) => {
         setTextToShare(`${verseId} ${content}`);
         setIsNewEntryModalOpen(true);
-        // const newEntry: JournalEntry = {
-        //     id: Date.now().toString(),
-        //     date: new Date().toISOString(),
-        //     content: "",
-        //     verses: [verseId],
-        // }
-        // setJournalEntries([...journalEntries, newEntry])
     }
 
     const updateJournalEntry = (id: string, content: string) => {
@@ -435,16 +415,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
             { role: "system", content: "You are a helpful AI assistant for Bible study." },
             { role: "user", content: `Please provide insights on this verse: ${content}` }
         ])
-    }
-
-    const sendAIChatMessage = () => {
-        if (aiChatInput.trim()) {
-            setAiChatMessages([...aiChatMessages, { role: "user", content: aiChatInput }])
-            setAiChatInput("")
-            setTimeout(() => {
-                setAiChatMessages(prev => [...prev, { role: "assistant", content: "This is a simulated AI response. In a real application, this would be generated by an AI model based on the context of the conversation and the specific verse being discussed." }])
-            }, 1000)
-        }
     }
 
     const openHighlightOptions = (verseId: string) => {
@@ -637,14 +607,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
     const pageX = useMotionValue(0)
     const pageRotate = useTransform(pageX, [-100, 0, 100], [-10, 0, 10])
 
-    const verseContents = [
-        "These are the kings of the land whom the Israelites had defeated and whose territory they took over east of the Jordan, from the Arnon Gorge to Mount Hermon, including all the eastern side of the Arabah:",
-        "Sihon king of the Amorites, who reigned in Heshbon. He ruled from Aroer on the rim of the Arnon Gorge—from the middle of the gorge—to the Jabbok River, which is the border of the Ammonites. This",
-        "included half of Gilead, from the Arabah to the Sea of Galilee in the east, and from Beth Jeshimoth to the slopes of Pisgah on the south.",
-        "And the territory of Og king of Bashan, one of the last of the Rephaites, who reigned in Ashtaroth and Edrei.",
-        "He ruled over Mount Hermon, Salekah, all of Bashan to the border of the people of Geshur and Maakah, and half of Gilead to the border of Sihon king of Heshbon."
-    ];
-
     const getTextContentFromParagraph = (verseParagraph: string) => {
         // Create a DOM parser to handle the HTML string
         const parser = new DOMParser();
@@ -771,29 +733,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         setLoading(false);
     }
 
-
-    const createOrUpdateNote = async (note) => {
-        setLoading(true);
-
-        const formData = new FormData();
-        formData.append('noteId', note.id);
-        formData.append('verseId', note.verseId);
-        formData.append('content', note?.content);
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/note/createOrUpdateNote`, {
-            method: "POST",
-            headers: {
-            },
-            body: formData
-        });
-
-        const data = await response.json();
-        if (data) {
-            toast.success('Notes have been saved')
-        }
-        setLoading(false);
-    }
-
     const deleteNoteFromDb = async (id) => {
         setLoading(true);
 
@@ -814,27 +753,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
         setLoading(false);
     }
 
-    const createOrUpdateMultipleNotes = async (notes) => {
-        setLoading(true);
-
-        const formData = new FormData();
-        formData.append('notes', JSON.stringify(notes));
-        formData.append('userId', userId);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URL}/api/note/createOrUpdateMultipleNotes`, {
-            method: "POST",
-            headers: {
-            },
-            body: formData
-        });
-
-        const data = await response.json();
-        if (data) {
-            toast.success('Notes have been saved')
-        }
-        setLoading(false);
-    }
-
-
     return (
         <TooltipProvider>
 
@@ -847,17 +765,8 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                     className="bg-white p-4 rounded-lg shadow-lg"
                 >
                     <div className="mb-4 flex justify-between  flex-col">
-                        {/* <h3 className="text-lg font-semibold">New {selectedEntryType} Entry</h3> */}
                         <AddJournalForm verseContent={textToShare} addNewToJournalEntries={null} userId={userId} data={tags} selectedEntryType={selectedEntryType} setIsEditorOpen={setIsEditorOpen}></AddJournalForm>
                     </div>
-                    {/* <EditorContent editor={editor} />
-                                    <div className="mt-4 flex justify-end space-x-2">
-                                        <Button variant="outline" onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-                                        <Button onClick={() => {
-                                            // Save the entry logic here
-                                            setIsEditorOpen(false)
-                                        }}>Save Entry</Button>
-                                    </div> */}
                 </motion.div>) :
 
                 <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'} overflow-auto transition-colors duration-300 overflow-auto`}>
@@ -873,17 +782,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                     </Dialog>
 
                     <Dialog open={isNewEntryModalOpen} onOpenChange={setIsNewEntryModalOpen}>
-                        {/* <DialogTrigger asChild>
-                        <MotionButton
-                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleNewEntry}
-                        >
-                            <MessageSquarePlus className="mr-2 h-4 w-4" />
-                            New Entry
-                        </MotionButton>
-                    </DialogTrigger> */}
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Select Journal Entry Type</DialogTitle>
@@ -1053,23 +951,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                             </Button>
                                         </div>
                                         <ScrollArea className="h-[calc(100vh-10rem)]">
-                                            {/* {versesData && versesData.length > 0 && versesData.map((verseData) => verseData.notes.map((note) => (
-                                                <div key={note.id} className="mb-4">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-sm font-medium">{verseData.verseId}</span>
-                                                        <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
-                                                            <X className="h-4 w-4" />
-                                                            <span className="sr-only">Delete note</span>
-                                                        </Button>
-                                                    </div>
-                                                    <Textarea
-                                                        value={note.content}
-                                                        onChange={(e) => updateNote(note.id, e.target.value, verseData.verseId)}
-                                                        placeholder="Enter your note here..."
-                                                        className="w-full"
-                                                    />
-                                                </div>
-                                            )))} */}
+
                                             {notes.map((note) => (
                                                 <div key={note.id} className="mb-4">
                                                     <div className="flex justify-between items-center mb-2">
@@ -1090,18 +972,7 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                                     />
                                                 </div>
                                             ))}
-                                            {/* {notes && notes.length > 0 &&
-                                                <Button variant="ghost" onClick={() => saveVerseDataAndNotesToDb(notes)}>
-                                                    <SaveIcon className="h-4 w-4" />
-                                                    <span className="sr-only">Save notes</span>
-                                                </Button>
-                                            }
-                                            {versesData && versesData.length > 0 &&
-                                                <Button variant="ghost" onClick={() => createOrUpdateMultipleNotes(versesData.flatMap(verseData => verseData.notes.map(note => note)))}>
-                                                    <SaveIcon className="h-4 w-4" />
-                                                    <span className="sr-only">Save notes</span>
-                                                </Button>
-                                            } */}
+
                                         </ScrollArea>
                                     </div>
                                 </motion.div>
@@ -1136,40 +1007,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                     <audio ref={audioRef} src="/path-to-audio-file.mp3" />
 
                     <AIChatDialog verseId={currentAiChatVerseId} verseContent={currentAiChatVerse} showAIChat={showAIChat} setShowAIChat={setShowAIChat} ></AIChatDialog>
-                    {/* <Dialog open={showAIChat} onOpenChange={setShowAIChat}>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>Chat with AI Assistant</DialogTitle>
-                                <DialogDescription>
-                                    Discuss the verse and get deeper insights
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="mt-4">
-                                <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                                    {aiChatMessages.map((message, index) => (
-                                        <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                            <div className={`inline-block p-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                                                {message.content}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </ScrollArea>
-                                <div className="flex mt-4">
-                                    <Input
-                                        value={aiChatInput}
-                                        onChange={(e) => setAiChatInput(e.target.value)}
-                                        placeholder="Type your message..."
-                                        className="flex-grow mr-2"
-                                    />
-                                    <Button onClick={sendAIChatMessage}>
-                                        <Send className="h-4 w-4" />
-                                        <span className="sr-only">Send message</span>
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog> */}
-
                     <Dialog open={showHighlightOptions} onOpenChange={setShowHighlightOptions}>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
@@ -1215,26 +1052,6 @@ export default function EnhancedBibleStudy({ tags, userId }) {
                                 {loading ? <Spinner className={""} text={"Loading explanation"}></Spinner> : explanationType === "biblical" ?
                                     <div className="flex flex-col max-h-[50vh] overflow-y-auto">{biblicalContextExplanation}</div> : explanationType === "life" ? <div className="flex flex-col max-h-[50vh] overflow-y-auto">{lifeContextExplanation}</div> : ''}
 
-                                {/* {getWordDefinitions(selectedWords || '').map((def, index) => (
-                                            <div key={index} className="mb-4">
-                                                <h4 className="font-semibold">{def.word}</h4>
-                                                <p>{def.biblicalContext}</p>
-                                                <h5 className="font-semibold mt-2 mb-1">Related Scriptures:</h5>
-                                                <ul className="list-disc pl-5">
-                                                    {def.relatedScriptures.map((scripture, idx) => (
-                                                        <li key={idx}>{scripture}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))} */}
-
-
-                                {/* {getWordDefinitions(selectedWords || '').map((def, index) => (
-                                            <div key={index} className="mb-4">
-                                                <h4 className="font-semibold">{def.word}</h4>
-                                                <p>{def.lifeContext}</p>
-                                            </div>
-                                        ))} */}
 
                             </div>
                         </DialogContent>

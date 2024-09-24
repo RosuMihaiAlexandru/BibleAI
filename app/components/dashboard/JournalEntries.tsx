@@ -272,16 +272,8 @@ export default function JournalEntries({ data, tags, userId }) {
                                 >
                                     <div className="mb-4 flex justify-between  flex-col">
                                         <h3 className="text-lg font-semibold">New {selectedEntryType} Entry</h3>
-                                        <AddJournalForm addNewToJournalEntries={addNewToJournalEntries} userId={userId} data={tags} selectedEntryType={selectedEntryType} setIsEditorOpen={setIsEditorOpen}></AddJournalForm>
+                                        <AddJournalForm verseContent={""} addNewToJournalEntries={addNewToJournalEntries} userId={userId} data={tags} selectedEntryType={selectedEntryType} setIsEditorOpen={setIsEditorOpen}></AddJournalForm>
                                     </div>
-                                    {/* <EditorContent editor={editor} />
-                                    <div className="mt-4 flex justify-end space-x-2">
-                                        <Button variant="outline" onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-                                        <Button onClick={() => {
-                                            // Save the entry logic here
-                                            setIsEditorOpen(false)
-                                        }}>Save Entry</Button>
-                                    </div> */}
                                 </motion.div>
                             ) : (
                                 <motion.div

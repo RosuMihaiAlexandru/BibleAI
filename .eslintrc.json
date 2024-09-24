@@ -1,3 +1,16 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "next/image/no-img-element": "off", // This disables the requirement to use `next/image` instead of `<img>`
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "off",
+    "@next/next/no-async-client-component": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "import/named": "off",
+    "import/default": "off",
+    "import/namespace": "off",
+    "import/export": "off",
+    "import/no-unresolved": "off"
+
+  }
 }

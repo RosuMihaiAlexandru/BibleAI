@@ -7,8 +7,8 @@ import deepEql from 'fast-deep-equal'
 import { Toolbar } from '@/components/ui/Toolbar'
 import { Icon } from '@/components/ui/Icon'
 import { ImageBlockWidth } from './ImageBlockWidth'
-import { MenuProps } from '@/components/menus/types'
-import { getRenderContainer } from '@/lib/utils'
+import { MenuProps } from '@/app/components/menus/types'
+import { getRenderContainer } from '@/app/lib/utils'
 
 export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => {
   const menuRef = useRef<HTMLDivElement>(null)

@@ -1,9 +1,5 @@
-import { Button } from "@/components/ui/button";
-import {
-  RegisterLink,
-  LoginLink,
-  LogoutLink,
-} from "@kinde-oss/kinde-auth-nextjs/components";
+"use client"
+
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { Hero } from "./components/frontend/Hero";
 import { Logos } from "./components/frontend/Logos";
@@ -12,8 +8,13 @@ import { PricingTable } from "./components/shared/Pricing";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const { getUser } = getKindeServerSession();
-  const session = await getUser();
+  let session = null;
+  try {
+    const { getUser } = await getKindeServerSession();
+    session = await getUser();
+  } catch (error) {
+    console.error('Error fetching session:', error);
+  }
 
   if (session?.id) {
     return redirect("/dashboard");

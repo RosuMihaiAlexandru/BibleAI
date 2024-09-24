@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       : false;
 
     // Get the single note content
-    const note = formData.get("note") ? JSON.parse(formData.get("note")) : null;
+    const note = formData.get("note") ? JSON.parse(formData.get("note") as any) : null;
 
     // Check if the verse already exists
     let dbVerse = await prisma.verse.findUnique({
